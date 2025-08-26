@@ -1,0 +1,56 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="LanguageDetectionInspection" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="17">
+            <item index="0" class="java.lang.String" itemvalue="wrapt" />
+            <item index="1" class="java.lang.String" itemvalue="dill" />
+            <item index="2" class="java.lang.String" itemvalue="astroid" />
+            <item index="3" class="java.lang.String" itemvalue="lazy-object-proxy" />
+            <item index="4" class="java.lang.String" itemvalue="tomlkit" />
+            <item index="5" class="java.lang.String" itemvalue="platformdirs" />
+            <item index="6" class="java.lang.String" itemvalue="PyQt6" />
+            <item index="7" class="java.lang.String" itemvalue="colorama" />
+            <item index="8" class="java.lang.String" itemvalue="mccabe" />
+            <item index="9" class="java.lang.String" itemvalue="pylint" />
+            <item index="10" class="java.lang.String" itemvalue="typing_extensions" />
+            <item index="11" class="java.lang.String" itemvalue="tomli" />
+            <item index="12" class="java.lang.String" itemvalue="isort" />
+            <item index="13" class="java.lang.String" itemvalue="PyQt6-Qt6" />
+            <item index="14" class="java.lang.String" itemvalue="PyQt6-sip" />
+            <item index="15" class="java.lang.String" itemvalue="matplotlib" />
+            <item index="16" class="java.lang.String" itemvalue="numpy" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8Inspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="W292" />
+          <option value="E301" />
+          <option value="E305" />
+          <option value="E303" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyShadowingBuiltinsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredNames">
+        <list>
+          <option value="id" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="client.UI.main.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

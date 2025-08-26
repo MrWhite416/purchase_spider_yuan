@@ -1,0 +1,15 @@
+# development time: 2025-08-20  14:47
+# developer: 元英
+
+""" 这是项目的配置模块 """
+
+
+START_TIME = "2025-04-01"
+END_TIME = "2025-08-20"
+KEYS = ["卫星","机器人","人工智能","遥感","实景三维","低空经济"]
+FILTER_TITLE = ["结果","更正","中标","成交","定标","验收","开标","候选人"]
+FILTER_CONTENT = ["开标记录","中标金额","中标候选人资格审查结果"]
+FILTER = ["结果","更正","中标公告","成交","定标","验收","开标记录"]
+LOG_FILE = "./logs/log.txt"
+LOG_FILE_MAX = 124
+LOG_FILE_BACKUP_COUNT = 7

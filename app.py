@@ -2,7 +2,7 @@
 # developer: 元英
 
 from concurrent.futures import ThreadPoolExecutor
-from Purchase.spiders import spiders
+from spiders import spiders
 from util.tool import summary_df
 import warnings
 from urllib3.exceptions import InsecureRequestWarning

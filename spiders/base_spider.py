@@ -7,36 +7,80 @@ from curl_cffi.requests.exceptions import HTTPError, ConnectionError, Timeout  #
 
 from typing import Callable
 import pandas
+from lxml import etree
+import json
 from urllib3.util.retry import Retry
-from Purchase.util.log import logger
-from Purchase.setting import *
+from util.log import logger
+from setting import *
 
 
 class BaseSpider(object):
-    name = "BaseSpider"
+    # ------------------------------ 子类必须定义：网站元信息（类属性） ------------------------------
+    website: str = ""  # 网站域名
+    name: str = ""  # 网站名称
+    base_url: str = ""  # 基础URL（用于拼接相对链接）
+    search_api: str = ""  # 搜索接口URL
+    detail_api: str = ""  # 详情页API（可选）
+
     def __init__(self):
-        self.logger = logger
-        self.headers = {
-            "Accept": "*/*",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0",
-        }
+        # 1. 通用初始化
         self.start_time = START_TIME
         self.end_time = END_TIME
         self.keys = KEYS
         self.filter_title = FILTER_TITLE
         self.filter_content = FILTER_CONTENT
-        self.session =Session()
-        self.df = {
-            "标题":[],
-            "时间":[],
-            "来源":[],
-            "正文":[],
-            "链接":[],
-            "所在网站":[],
+
+        # 2. 请求配置
+        self.session = Session()
+        self.headers = self._get_default_headers()  # 默认请求头（钩子）
+
+        # 3. 状态管理
+        self.df = self._init_dataframe()  # 数据存储
+        self.logger = logger
+        self.temp_meta = {"release_time": "", "origin": ""}  # 临时存储详情页元数据
+
+
+    # ------------------------------ 通用工具：基础配置（子类极少覆盖） ------------------------------
+    def _get_default_headers(self) -> dict:
+        """默认请求头：子类可覆盖添加特殊Header（如X-Requested-With）"""
+        return {
+            "Accept": "*/*",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0",
         }
 
+    def _init_dataframe(self) -> dict:
+        """通用数据存储结构：所有子类统一"""
+        return {"标题": [], "时间": [], "来源": [], "正文": [], "链接": [], "所在网站": []}
 
-    def req(self,method:str,url:str,headers:dict,params:dict=None,data=None,json_d:dict=None) ->dict|str|bytes:
+    # ------------------------------ 通用工具方法（子类直接使用） ------------------------------
+    def adopt_title_filter(self, title: str) -> bool:
+        """标题过滤：通用逻辑"""
+        if any(word in title for word in self.filter_title):
+            self.logger.info(f"标题过滤：{title}")
+            return True
+        return False
+
+    def add(self, title: str, date: str, origin: str | None, content: str, link: str) -> None:
+        """数据存储：通用逻辑"""
+        self.df["标题"].append(title.strip())
+        self.df["时间"].append(date.strip())
+        self.df["来源"].append(origin)
+        self.df["正文"].append(content.strip())
+        self.df["链接"].append(link.strip())
+        self.df["所在网站"].append(self.name)
+        self.logger.info(f"已添加：{title} | {link}")
+
+    def save(self, save_path: str = "spider_result.xlsx") -> None:
+        """数据保存：通用逻辑"""
+        import pandas as pd
+        if not any(self.df.values()):
+            self.logger.info("无有效数据，不保存")
+            return
+        pd.DataFrame(self.df).to_excel(save_path, index=False, engine="openpyxl")
+        self.logger.info(f"保存完成：{save_path}（{len(self.df['标题'])}条）")
+
+
+    def req(self,method:str,url:str,headers:dict,params:dict=None,data=None,json_d:dict|str=None) ->dict|str|bytes:
 
         method_lower = method.lower()
         if method_lower not in ["get","post"]:
@@ -52,7 +96,7 @@ class BaseSpider(object):
                 resp.raise_for_status()
                 break   # 只要请求不出错就不重试
             except Exception as e:
-                self.logger.error(f"链接：{url}，请求出错：{e}")
+                self.logger.error(f"链接：{url} | 请求头：{headers} | 请求参数：{params or json_d or data} | 请求出错：{e}")
                 if i == 2:
                     raise
                 continue  # 请求出错就重试
@@ -75,22 +119,3 @@ class BaseSpider(object):
                 return resp.content
 
 
-    def add(self,title,date,origin,content,link,website):
-        self.df["标题"].append(title)
-        self.df["时间"].append(date)
-        self.df["来源"].append(origin)
-        self.df["正文"].append(content)
-        self.df["链接"].append(link)
-        self.df["所在网站"].append(website)
-        self.logger.info(f"{title} | {link} | {website} | 已添加")
-
-    def adopt_title_filter(self, title: str) ->bool:
-        if any(k in title for k in self.filter_title):
-            self.logger.info(f"{title}--已被过滤")
-            return True
-        return False
-
-    def save(self):
-        """ 存储逻辑 """
-        df = pandas.DataFrame(self.df)
-        df.to_excel(".xlsx",index=False)

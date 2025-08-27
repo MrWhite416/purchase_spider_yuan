@@ -6,7 +6,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 from colorama import init, Style, Fore
-from Purchase.setting import LOG_FILE,LOG_FILE_MAX,LOG_FILE_BACKUP_COUNT
+from setting import LOG_FILE,LOG_FILE_MAX,LOG_FILE_BACKUP_COUNT
 
 
 class CustomColoredFormatter(logging.Formatter):

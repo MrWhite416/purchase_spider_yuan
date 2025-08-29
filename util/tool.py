@@ -90,6 +90,8 @@ def pdf_to_text(content:bytes) -> str:
     total_pages = doc.page_count
     full_text = ""
 
+
+
     # 2. 逐页提取文本（批量处理比单页循环更高效）
     for page_num in range(total_pages):
         page = doc[page_num]

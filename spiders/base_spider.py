@@ -1,5 +1,6 @@
 # development time: 2025-08-20  14:15
 # developer: 元英
+import math
 
 # import requests
 from curl_cffi import Session
@@ -11,15 +12,49 @@ from lxml import etree
 import json
 from urllib3.util.retry import Retry
 from util.log import logger
+from types import FunctionType
 from setting import *
+from functools import wraps
 
 
-class BaseSpider(object):
+# 定义通用异常捕获装饰器
+def exception_handler(func):
+    @wraps(func)  # 保留原函数的元信息（如名称、文档）
+    def wrapper(self, *args, **kwargs):
+        try:
+            # 调用被装饰的方法（子类实现的逻辑）
+            return func(self, *args, **kwargs)
+        except Exception as e:
+            # 统一异常处理：日志记录、返回默认值等
+            logger.error(f"方法 {func.__name__} 执行出错: {str(e)}", exc_info=True)
+            # raise  # 可根据需求返回默认值或自定义结果
+    return wrapper
+
+
+# 3. 定义元类（自动为所有方法添加装饰器）
+class ExceptionHandlerMeta(type):
+    def __new__(cls, name, bases, namespace, **kwargs):
+        # 遍历类的所有属性
+        for attr_name, attr_value in namespace.items():
+            # 只处理自定义方法（排除特殊方法如__init__、__str__等）
+            if (
+                    isinstance(attr_value, FunctionType)  # 是函数/方法
+                    and not attr_name.startswith("__")  # 不是特殊方法（可根据需要调整）
+            ):
+                # 用装饰器包装方法
+                namespace[attr_name] = exception_handler(attr_value)
+
+        # 创建并返回新类
+        return super().__new__(cls, name, bases, namespace)
+
+
+
+class BaseSpider(metaclass=ExceptionHandlerMeta):
     # ------------------------------ 子类必须定义：网站元信息（类属性） ------------------------------
     website: str = ""  # 网站域名
     name: str = ""  # 网站名称
     base_url: str = ""  # 基础URL（用于拼接相对链接）
-    search_api: str = ""  # 搜索接口URL
+    search_api: str = ""  # 搜索接口URL（可能不止一个搜索接口）
     detail_api: str = ""  # 详情页API（可选）
 
     def __init__(self):
@@ -55,9 +90,12 @@ class BaseSpider(object):
     # ------------------------------ 通用工具方法（子类直接使用） ------------------------------
     def adopt_title_filter(self, title: str) -> bool:
         """标题过滤：通用逻辑"""
+
+        # 过滤结果等已经开标的公告
         if any(word in title for word in self.filter_title):
             self.logger.info(f"标题过滤：{title}")
             return True
+
         return False
 
     def add(self, title: str, date: str, origin: str | None, content: str, link: str) -> None:
@@ -79,11 +117,11 @@ class BaseSpider(object):
         pd.DataFrame(self.df).to_excel(save_path, index=False, engine="openpyxl")
         self.logger.info(f"保存完成：{save_path}（{len(self.df['标题'])}条）")
 
-
-    def req(self,method:str,url:str,headers:dict,params:dict=None,data=None,json_d:dict|str=None) ->dict|str|bytes:
+    def req(self, method: str, url: str, headers: dict, params: dict = None, data=None,
+            json_d: dict | str = None) -> dict | str | bytes:
 
         method_lower = method.lower()
-        if method_lower not in ["get","post"]:
+        if method_lower not in ["get", "post"]:
             self.logger.error("不支持该方法")
             raise ValueError("不支持该方法")
 
@@ -92,13 +130,14 @@ class BaseSpider(object):
         for i in range(3):  # 重试三次
 
             try:
-                resp = fetch_func(url,headers=headers,params=params,json=json_d,data=data,verify=False)
+                resp = fetch_func(url, headers=headers, params=params, json=json_d, data=data, verify=False)
                 resp.raise_for_status()
-                break   # 只要请求不出错就不重试
+                break  # 只要请求不出错就不重试
             except Exception as e:
                 self.logger.error(f"链接：{url} | 请求头：{headers} | 请求参数：{params or json_d or data} | 请求出错：{e}")
                 if i == 2:
-                    raise
+                    self.logger.critical(
+                        f"链接：{url} | 请求头：{headers} | 请求参数：{params or json_d or data} | <三次请求全部失败>：{e}")
                 continue  # 请求出错就重试
             except HTTPError as e:
                 self.logger.error(f"请求出错（状态码不为2）；{e} | 链接：{url}")
@@ -110,6 +149,26 @@ class BaseSpider(object):
             # 解析JSON失败，根据Content-Type判断
             content_type = resp.headers.get('Content-Type', '').lower()
 
+            # 取前16字节内容（足够判断大多数文件类型）
+            content_sample = resp.content[:16] if resp.content else b''
+
+            # 二进制文件的签名（Magic Number）
+            binary_signatures = [
+                b'%PDF-',  # PDF
+                b'\x89PNG\r\n\x1a\n',  # PNG
+                b'\xff\xd8\xff',  # JPEG
+                b'GIF87a', b'GIF89a',  # GIF
+                b'PK\x03\x04',  # ZIP
+                b'RIFF',  # WAV/AVI
+                b'MThd',  # MIDI
+                b'\x1f\x8b',  # GZIP
+            ]
+
+            # 如果内容匹配任何二进制签名，判定为二进制
+            for sig in binary_signatures:
+                if content_sample.startswith(sig):
+                    return resp.content
+
             # 文本类型（如text/html、text/plain等）
             if content_type.startswith(('text/', 'application/json', 'application/javascript')):
                 return resp.text
@@ -117,5 +176,6 @@ class BaseSpider(object):
             # 二进制类型（如图片、文件等）
             else:
                 return resp.content
+
 
 

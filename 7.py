@@ -1,15 +1,15 @@
 from curl_cffi import requests
 
+import requests
+
 
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
     "Cache-Control": "no-cache",
     "Connection": "keep-alive",
-    "Content-Type": "application/x-www-form-urlencoded",
-    "Origin": "https://ggzyjy.shandong.gov.cn",
     "Pragma": "no-cache",
-    "Referer": "https://ggzyjy.shandong.gov.cn/queryContent-jyxxgk.jspx",
+    "Referer": "https://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=0&dbselect=bidx&kw=%E5%8D%AB%E6%98%9F&start_time=2025%3A06%3A01&end_time=2025%3A08%3A29&timeType=6&displayZone=&zoneId=&pppStatus=0&agentName=",
     "Sec-Fetch-Dest": "document",
     "Sec-Fetch-Mode": "navigate",
     "Sec-Fetch-Site": "same-origin",
@@ -20,20 +20,26 @@ headers = {
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": "\"Windows\""
 }
-cookies = {
-    "clientlanguage": "zh_CN",
-    "JSESSIONID": "DF7B686AB7FD82EF0E9A821061A35326"
+url = "https://search.ccgp.gov.cn/bxsearch"
+params = {
+    "searchtype": "1",
+    "page_index": "2",
+    "bidSort": "0",
+    "buyerName": "",
+    "projectId": "",
+    "pinMu": "0",
+    "bidType": "0",
+    "dbselect": "bidx",
+    "kw": "卫星",
+    "start_time": "2025:06:01",
+    "end_time": "2025:08:29",
+    "timeType": "6",
+    "displayZone": "",
+    "zoneId": "",
+    "pppStatus": "0",
+    "agentName": ""
 }
-url = "https://ggzyjy.shandong.gov.cn/queryContent-jyxxgk.jspx"
-data = {
-    "title": "卫星",
-    "origin": "",
-    "inDates": "300",
-    "channelId": "151",
-    "ext": ""
-}
-response = requests.post(url, headers=headers, cookies=cookies, data=data)
-import datetime
+response = requests.get(url, headers=headers, params=params)
+
 print(response.text)
 print(response)
-print(abs((datetime.datetime.strptime("2025-07-22","%Y-%m-%d").date() - datetime.datetime.now().date()).days))

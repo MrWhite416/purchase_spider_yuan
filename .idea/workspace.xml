@@ -5,12 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="32185471-41c0-4b1f-ab4b-ad84ccd793e7" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/00.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dbnavigator.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dbnavigator.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/00.html" beforeDir="false" afterPath="$PROJECT_DIR$/00.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/00.py" beforeDir="false" afterPath="$PROJECT_DIR$/00.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/7.py" beforeDir="false" afterPath="$PROJECT_DIR$/7.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/all_data.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/all_data.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/issue.txt" beforeDir="false" afterPath="$PROJECT_DIR$/issue.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt.1" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.1" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt.2" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.2" afterDir="false" />
@@ -19,11 +21,11 @@
       <change beforePath="$PROJECT_DIR$/logs/log.txt.5" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.5" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt.6" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.6" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt.7" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.7" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setting.py" beforeDir="false" afterPath="$PROJECT_DIR$/setting.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/spiders/base_spider.py" beforeDir="false" afterPath="$PROJECT_DIR$/spiders/base_spider.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spiders/draft_base_spider.py" beforeDir="false" afterPath="$PROJECT_DIR$/spiders/draft_base_spider.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spiders/draft_spiders.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/spiders/spiders.py" beforeDir="false" afterPath="$PROJECT_DIR$/spiders/spiders.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/log.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/log.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/util/tool.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/tool.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/website_config.xls" beforeDir="false" afterPath="$PROJECT_DIR$/website_config.xls" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,7 +60,7 @@
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;deletionFromPopupRequiresConfirmation&quot;: &quot;false&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/YuanYing'sProject/purchaseInformationProject&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/YuanYing'sProject/purchaseInformationProject/Purchase&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -68,6 +70,9 @@
   }
 }</component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\YuanYing'sProject\purchaseInformationProject\Purchase" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\YuanYing'sProject\purchaseInformationProject\Purchase" />
     </key>
@@ -186,9 +191,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.app (1)" />
+        <item itemvalue="Python.00" />
         <item itemvalue="Python.7" />
         <item itemvalue="Python.spiders" />
-        <item itemvalue="Python.00" />
         <item itemvalue="Python.draft_spiders" />
       </list>
     </recent_temporary>
@@ -212,26 +217,41 @@
       <workItem from="1756168672962" duration="4358000" />
       <workItem from="1756173382217" duration="92000" />
       <workItem from="1756173493941" duration="23355000" />
-      <workItem from="1756256317190" duration="22629000" />
+      <workItem from="1756256317190" duration="28899000" />
+      <workItem from="1756344005421" duration="27780000" />
+      <workItem from="1756429016725" duration="19400000" />
     </task>
+    <task id="LOCAL-00001" summary="新增网站">
+      <option name="closed" value="true" />
+      <created>1756282196818</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1756282196818</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="新增网站" />
+    <option name="LAST_COMMIT_MESSAGE" value="新增网站" />
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/app_py$7.coverage" NAME="7 Coverage Results" MODIFIED="1756113266210" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$log.coverage" NAME="log Coverage Results" MODIFIED="1755760113392" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/util" />
-    <SUITE FILE_PATH="coverage/Purchase$app__1_.coverage" NAME="app (1) Coverage Results" MODIFIED="1756281747094" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Purchase$app__1_.coverage" NAME="app (1) Coverage Results" MODIFIED="1756453880526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$app.coverage" NAME="app Coverage Results" MODIFIED="1755765999229" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase" />
     <SUITE FILE_PATH="coverage/Purchase$7__1_.coverage" NAME="7 (1) Coverage Results" MODIFIED="1756190722642" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/app_py$draft_spiders.coverage" NAME="draft_spiders Coverage Results" MODIFIED="1756171295170" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/spiders" />
     <SUITE FILE_PATH="coverage/Purchase$spiders.coverage" NAME="spiders Coverage Results" MODIFIED="1756280422340" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spiders" />
-    <SUITE FILE_PATH="coverage/Purchase$7.coverage" NAME="7 Coverage Results" MODIFIED="1756281552920" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Purchase$7.coverage" NAME="7 Coverage Results" MODIFIED="1756450921484" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/app_py$app.coverage" NAME="app Coverage Results" MODIFIED="1756114188821" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$verification_code.coverage" NAME="verification_code Coverage Results" MODIFIED="1755768130597" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/util" />
     <SUITE FILE_PATH="coverage/app_py$spiders.coverage" NAME="spiders Coverage Results" MODIFIED="1756092711967" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/spiders" />
-    <SUITE FILE_PATH="coverage/Purchase$00.coverage" NAME="00 Coverage Results" MODIFIED="1756273167421" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Purchase$00.coverage" NAME="00 Coverage Results" MODIFIED="1756452621996" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/app_py$base_spider.coverage" NAME="base_spider Coverage Results" MODIFIED="1756025054660" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/spiders" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$spiders.coverage" NAME="spiders Coverage Results" MODIFIED="1755763593057" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/spiders" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$log__1_.coverage" NAME="log (1) Coverage Results" MODIFIED="1755759782321" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../../SideHustleFiles/爬虫/2025-03-12/projectTwo/utils" />

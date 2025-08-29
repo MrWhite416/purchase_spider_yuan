@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
 def ck_tasks():
     tasks = []
-    for i in range(1,21):
+    for i in range(1,25):
 
         example = getattr(spiders,f"Spider{i}")()
         if example.run_flag:

@@ -3,10 +3,12 @@
 import datetime
 import json
 import hashlib
+import random
+
 from Crypto.Util.Padding import unpad
 import base64
 import time
-from Crypto.Cipher import AES,DES
+from Crypto.Cipher import AES, DES
 from Crypto.Util.Padding import pad  # pkcs7填充
 import base64
 from lxml import etree
@@ -38,8 +40,8 @@ class Spider1(BaseSpider):
             "bidType": "",
             "dbselect": "bidx",
             "kw": "卫星",  # 关键词
-            "start_time": "2025:08:13",  # 开始时间
-            "end_time": "2025:08:20",  # 结束时间
+            "start_time": self.standard_time(self.start_time),  # 开始时间
+            "end_time": self.standard_time(self.end_time),  # 结束时间
             "timeType": "6",  # 指定时间
             "displayZone": "",
             "zoneId": "",
@@ -54,7 +56,8 @@ class Spider1(BaseSpider):
             self.params["page_index"] = str(self.first_page_num)
             self.params["kw"] = k
 
-            resp = self.req("get",url=self.search_api,headers=self.headers,params=self.params)
+            headers = self.update_headers()
+            resp = self.req("get", url=self.search_api, headers=headers, params=self.params)
             total_page = self.gain_total_page(resp)
 
             if not total_page:
@@ -63,61 +66,70 @@ class Spider1(BaseSpider):
             self.process(resp)
 
             # 分页
-            for page_num in range(self.first_page_num+1,total_page+1):
+            for page_num in range(self.first_page_num + 1, total_page + 1):
                 self.params["page_index"] = page_num
-                resp = self.req("get", url=self.search_api, headers=self.headers, params=self.params)
+                resp = self.req("get", url=self.search_api, headers=headers, params=self.params)
 
                 self.process(resp)
+            time.sleep(4)
 
         return self
 
-    def process(self,resp):
+    def process(self, resp):
 
         urls = self.clean_urls(resp)
 
-        for title,release_time,link in urls:
-            detail = self.req("get",url=link,headers=self.headers)
-            origin,text=self.clean_detail(detail)
+        for title, release_time, link in urls:
+            detail = self.req("get", url=link, headers=self.headers)
+            origin, text = self.clean_detail(detail)
 
-            self.add(title,release_time,origin,text,link)
+            self.add(title, release_time, origin, text, link)
 
     def clean_urls(self, resp):
 
         sele = etree.HTML(resp)
         lis = sele.xpath(".//ul[@class='vT-srch-result-list-bid']/li")
-        urls=[]
+        urls = []
 
         for li in lis:
-            title = etree.tostring(li.xpath("./a")[0],method="text",encoding="unicode")
+            title = etree.tostring(li.xpath("./a")[0], method="text", encoding="unicode").strip()
             if self.adopt_title_filter(title):
                 continue
 
-            link = li.xpath("./a/@herf")[0]
+            link = li.xpath("./a/@href")[0]
             time_organ = li.xpath("./span/text()")[0]
             release_time = time_organ.split("|")[0].strip()
 
-            urls.append([title,release_time,link])
+            urls.append([title, release_time, link])
 
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
+        try:
+            sele = etree.HTML(detail)
+            origin = self.name
 
-        sele = etree.HTML(detail)
-        origin = sele.xpath(".//span[@id='sourceName']/text()")[0]
+            content_ele = sele.xpath(".//div[@class='vF_detail_content']")[0]
+            content = etree.tostring(content_ele, method="html", encoding="unicode")
 
-        content_ele = sele.xpath(".//div[@class='vF_detail_content']")[0]
-        content = etree.tostring(content_ele,method="html",encoding="unicode")
+            text = element_to_text(content)
 
-        text = element_to_text(content)
+            return origin, text
+        except Exception as e:
+            self.logger.error(f"错误行号：{e.__traceback__.tb_lineno}")
+            raise
 
-        return origin,text
+    def update_headers(self):
 
+        headers = {}
+        headers.update(self.headers)
 
+        headers[
+            "Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
 
-    def is_next(self):
-        """ 判断是否有下一页 """
+        return headers
 
-    def gain_total_page(self,resp):
+    def gain_total_page(self, resp):
         """ 获取总页数 """
 
         sele = etree.HTML(resp)
@@ -125,10 +137,20 @@ class Spider1(BaseSpider):
         if not p_eles:
             return 0  # 没有页码表元素，说明没有数据
 
-        total_page = p_eles[0].xpath("./a/text()")[-2]
+        total_page = 1
+        for i in p_eles[0].xpath("./*/text()"):
+            if str(i).isdigit():
+
+                if int(i) > total_page:
+                    total_page = int(i)
+
         return int(total_page)
 
+    def standard_time(self, tt):
+        return tt.replace("-", ":")
 
+
+# 弃用
 class Spider2(BaseSpider):
     website = "bulletin.cebpubservice.com"
     name = "中国招标投标公共服务平台"
@@ -176,13 +198,13 @@ class Spider3(BaseSpider):
             "FINDTXT": "卫星"  # 关键词
         }
         self.total_page = 0
-        self.run_flag = True
+        self.run_flag = False
         self.first_page_num = 1
 
     def master(self):
         try:
             for k in self.keys:  # 遍历关键词
-                for i,l in [("1","0001"), ('2',"0101")]:  # 遍历数据源
+                for i, l in [("1", "0001"), ('2', "0101")]:  # 遍历数据源
 
                     try:
                         self.data["SOURCE_TYPE"] = str(i)
@@ -599,7 +621,6 @@ class Spider6(BaseSpider):
 
             self.add(title, release_time, origin, text, u)
 
-
     def clean_urls(self, resp: str) -> list:
         """ 清洗出详情页的链接 """
 
@@ -626,7 +647,6 @@ class Spider6(BaseSpider):
 
         sele = etree.HTML(detail)
 
-
         content_ele = sele.xpath(".//div[@id='content']")[0]
         title = content_ele.xpath("./div[@class='content-title']/text()")[0].strip()
         release_time, origin = content_ele.xpath(".//font[1]/text()")[0].split("    ")
@@ -646,12 +666,9 @@ class Spider6(BaseSpider):
         # 然后提取正文元素
         text_ele = content_ele.xpath(".//div[@id='content']")[0]
 
-
-
         new_text = etree.tostring(text_ele, method="html", encoding="unicode")
         text = element_to_text(new_text)
         return title, release_time, origin, text
-
 
     def encrypt_url(self, url: str):
         """ 返回加密后的详情页链接 """
@@ -731,7 +748,6 @@ class Spider7(BaseSpider):
 
             except Exception as e:
                 self.logger.error(f"{self.name} | 出错 | {e} | 错误行号：{e.__traceback__.tb_lineno}")
-
 
         return self
 
@@ -857,7 +873,6 @@ class Spider8(BaseSpider):
 
             self.add(title, release_time, origin, text, u)
             time.sleep(1)
-
 
     def clean_urls(self, resp: str):
 
@@ -1317,7 +1332,7 @@ class Spider12(BaseSpider):
             urls = []
             datas = resp["result"]["records"]
             for d in datas:
-                title = d["titlenew"].strip()
+                title = d["title"].strip()
                 if self.adopt_title_filter(title):
                     continue
 
@@ -1343,8 +1358,6 @@ class Spider12(BaseSpider):
         origin = None
 
         return origin, text
-
-
 
     def standardize_time(self, time_str: str) -> str:
         return f"{time_str} 00:00:00"
@@ -1398,6 +1411,7 @@ class Spider13(BaseSpider):
             origin, text = self.clean_detail(detail)
 
             self.add(title, release_date, origin, text, link)
+            time.sleep(random.randint(20,50)*0.01)
 
     def clean_urls(self, resp):
 
@@ -1507,7 +1521,7 @@ class Spider14(BaseSpider):
             self.data["pn"] = self.first_page_num
 
             data = json.dumps(self.data)
-            resp = self.req("post",url=self.search_api,headers=self.headers,data=data)
+            resp = self.req("post", url=self.search_api, headers=self.headers, data=data)
 
             total_page = math.ceil(resp["result"]["totalcount"] / self.data["rn"])
             if not total_page:
@@ -1516,9 +1530,8 @@ class Spider14(BaseSpider):
 
             self.process(resp)
 
-
             # 分页
-            for page_num in range(self.first_page_num+1,total_page+1):
+            for page_num in range(self.first_page_num + 1, total_page + 1):
                 self.data["pn"] = page_num * self.data["rn"]
 
                 data = json.dumps(self.data)
@@ -1528,17 +1541,16 @@ class Spider14(BaseSpider):
 
         return self
 
-    def process(self,resp):
+    def process(self, resp):
 
         urls = self.clean_urls(resp)
-        for title, release_date,origin, link in urls:
+        for title, release_date, origin, link in urls:
             detail = self.req("get", url=link, headers=self.headers)
             text = self.clean_detail(detail)
 
             self.add(title, release_date, origin, text, link)
 
-
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
 
         urls = []
         records = resp["result"]["records"]
@@ -1548,15 +1560,14 @@ class Spider14(BaseSpider):
             if self.adopt_title_filter(title):
                 continue
 
-
             release_date = d["infodate"]
             link = self.url + d["linkurl"]
             origin = d["infod"]
-            urls.append([title, release_date, origin,link])
+            urls.append([title, release_date, origin, link])
 
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
 
         sele = etree.HTML(detail)
         table_content = sele.xpath(".//table")[0]
@@ -1565,9 +1576,6 @@ class Spider14(BaseSpider):
         text = element_to_text(content_text)
 
         return text
-
-
-
 
     def is_next(self):
         pass
@@ -1613,7 +1621,7 @@ class Spider15(BaseSpider):
 
             # 2. 首次查询
             headers = self.update_headers_new(self.data)
-            resp = self.req("post",url=self.search_api,headers=headers,json_d=self.data)
+            resp = self.req("post", url=self.search_api, headers=headers, json_d=self.data)
 
             # 解密
             resp = self.aes_decrypt(resp)
@@ -1622,9 +1630,8 @@ class Spider15(BaseSpider):
                 self.logger.info(f"[{k}] 没有查找到数据")
                 continue
 
-
             self.process(resp)
-            for page_num in range(self.first_page_num+1,total_page+1):
+            for page_num in range(self.first_page_num + 1, total_page + 1):
                 self.data["pageNo"] = page_num
                 headers = self.update_headers_new(self.data)
                 resp = self.req("post", url=self.search_api, headers=headers, json_d=self.data)
@@ -1634,32 +1641,31 @@ class Spider15(BaseSpider):
 
         return self
 
-    def process(self,resp):
+    def process(self, resp):
 
         urls = self.clean_urls(resp)
         detail_url = "https://ggzyfw.fujian.gov.cn/FwPortalApi/Trade/TradeInfoContent"
-        for title,release_time,origin,show_detail_link,id_ in urls:
+        for title, release_time, origin, show_detail_link, id_ in urls:
             detail_data = {
                 "m_id": id_,
                 "type": "PURCHASE_QUALI_INQUERY_ANN",
-                "ts": int(time.time()*1000)
+                "ts": int(time.time() * 1000)
             }
             headers = self.update_headers_new(detail_data)
 
-            detail = self.req("post",url=detail_url,headers=headers,json_d=detail_data)
+            detail = self.req("post", url=detail_url, headers=headers, json_d=detail_data)
             text = self.clean_detail(detail)
 
-            self.add(title,release_time,origin,text,show_detail_link)
+            self.add(title, release_time, origin, text, show_detail_link)
 
-
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
 
         # 解析url
         urls = []
         show_detail_api = "https://ggzyfw.fujian.gov.cn/business/detail"
         datas = resp["Table"]
         for d in datas:
-            title = d["NAME"].strrip()
+            title = d["NAME"].strip()
             if self.adopt_title_filter(title):
                 continue
 
@@ -1670,17 +1676,17 @@ class Spider15(BaseSpider):
             kind = d["KIND"]
             show_detail_link = f"{show_detail_api}?name={title}&cid={cid}&type={kind}"
 
-            urls.append([title,release_time,origin,show_detail_link,id_])
+            urls.append([title, release_time, origin, show_detail_link, id_])
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
 
         content = self.aes_decrypt(detail)["Contents"]
         text = element_to_text(content)
 
         return text
 
-    def get_sign(self,data):
+    def get_sign(self, data):
         """ 获取签名密文 """
 
         def js_sort_key(t, e):
@@ -1734,17 +1740,16 @@ class Spider15(BaseSpider):
         md5.update(data)
         return md5.hexdigest()  # 返回十六进制字符串
 
-    def update_headers_new(self,data):
+    def update_headers_new(self, data):
         """ 新建请求头 """
 
         headers = {}
         headers["portal-sign"] = self.get_sign(data)
 
-
         headers.update(self.headers)
         return headers
 
-    def aes_decrypt(self,resp, mode=AES.MODE_CBC, encoding='base64'):
+    def aes_decrypt(self, resp, mode=AES.MODE_CBC, encoding='base64'):
         """
         AES 解密函数
 
@@ -1763,7 +1768,6 @@ class Spider15(BaseSpider):
         ciphertext = resp["Data"]
         key = "EB444973714E4A40876CE66BE45D5930"  # 16字节密钥（AES-128）
         iv = "B5A8904209931867"  # 16字节初始向量
-
 
         # 处理密钥
         if isinstance(key, str):
@@ -1854,7 +1858,7 @@ class Spider16(BaseSpider):
             self.data["pn"] = self.first_page_num
 
             data = json.dumps(self.data)
-            resp = self.req("post",url=self.search_api,headers=self.headers,data=data)
+            resp = self.req("post", url=self.search_api, headers=self.headers, data=data)
 
             total_page = math.ceil(resp["result"]["totalcount"] / self.data["rn"])
             if not total_page:
@@ -1863,9 +1867,8 @@ class Spider16(BaseSpider):
 
             self.process(resp)
 
-
             # 分页
-            for page_num in range(self.first_page_num+1,total_page+1):
+            for page_num in range(self.first_page_num + 1, total_page + 1):
                 self.data["pn"] = page_num * self.data["rn"]
 
                 data = json.dumps(self.data)
@@ -1873,13 +1876,12 @@ class Spider16(BaseSpider):
 
                 self.process(resp)
 
-
         return self
 
-    def process(self,resp):
+    def process(self, resp):
 
         urls = self.clean_urls(resp)
-        for title, release_date, origin,link in urls:
+        for title, release_date, origin, link in urls:
             detail = self.req("get", url=link, headers=self.headers)
             try:
                 text = self.clean_detail(detail)
@@ -1889,9 +1891,7 @@ class Spider16(BaseSpider):
 
             self.add(title, release_date, origin, text, link)
 
-
-
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
         urls = []
         records = resp["result"]["records"]
 
@@ -1900,15 +1900,14 @@ class Spider16(BaseSpider):
             if self.adopt_title_filter(title):
                 continue
 
-
             release_date = d["infodate"]
             link = self.url + d["linkurl"]
             origin = d["laiyuan"]
-            urls.append([title, release_date, origin,link])
+            urls.append([title, release_date, origin, link])
 
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
         sele = etree.HTML(detail)
         div_content = sele.xpath(".//div[@class='text']")[0]
 
@@ -1916,7 +1915,6 @@ class Spider16(BaseSpider):
         text = element_to_text(content_text)
 
         return text
-
 
     def is_next(self):
         pass
@@ -2047,8 +2045,9 @@ class Spider17(BaseSpider):
         :return:
         """
         now = datetime.datetime.now().date()
-        start = datetime.datetime.strptime(tt,"%Y-%m-%d").date()
+        start = datetime.datetime.strptime(tt, "%Y-%m-%d").date()
         return abs((start - now).days)
+
 
 class Spider18(BaseSpider):
     website = "hndzzbtb.fgw.henan.gov.cn"
@@ -2071,7 +2070,7 @@ class Spider18(BaseSpider):
             "word": "网站",
             "startcheckDate": self.start_time,
             "endcheckDate": self.end_time,
-            "page":"1"
+            "page": "1"
         }
         self.first_page_num = 1
 
@@ -2081,7 +2080,7 @@ class Spider18(BaseSpider):
             self.params["page"] = self.first_page_num
 
             # 首次请求
-            resp = self.req("get",url=self.search_api,headers=self.headers,params=self.params)
+            resp = self.req("get", url=self.search_api, headers=self.headers, params=self.params)
 
             sele = etree.HTML(resp)
             total_page_ele = sele.xpath(".//div[@class='pagination']/label/text()")
@@ -2093,8 +2092,7 @@ class Spider18(BaseSpider):
             self.process(resp)
 
             # 分页
-            for page_num in range(self.first_page_num+1,total_page+1):
-
+            for page_num in range(self.first_page_num + 1, total_page + 1):
                 self.logger.info(f"[{k}]，第{page_num}页")
                 self.params["page"] = page_num
                 resp = self.req("get", url=self.search_api, headers=self.headers, params=self.params)
@@ -2102,17 +2100,16 @@ class Spider18(BaseSpider):
 
         return self
 
-    def process(self,resp):
+    def process(self, resp):
 
         urls = self.clean_urls(resp)
-        for title,release_time,origin,link in urls:
-
-            detail = self.req("get",url=link,headers=self.headers)
+        for title, release_time, origin, link in urls:
+            detail = self.req("get", url=link, headers=self.headers)
             text = self.clean_detail(detail)
 
-            self.add(title,release_time,origin,text,link)
+            self.add(title, release_time, origin, text, link)
 
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
 
         sele = etree.HTML(resp)
 
@@ -2128,13 +2125,13 @@ class Spider18(BaseSpider):
             origin = tr.xpath('./td[4]/text()')[0]
             release_time = tr.xpath('./td[5]/text()')[0]
 
-            link = href.replace("javascript:urlOpen(\'","").replace("\')",'')
-            urls.append([title,release_time,origin,link])
+            link = href.replace("javascript:urlOpen(\'", "").replace("\')", '')
+            urls.append([title, release_time, origin, link])
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
         pdf_base_url = "http://222.143.32.113:8087/bulletin/getBulletin"
-        sele= etree.HTML(detail)
+        sele = etree.HTML(detail)
         id_ = sele.xpath(".//div[@class='mian_list_03']/@index")[0]
 
         cipher_text = self.get_cipher_text()
@@ -2144,7 +2141,7 @@ class Spider18(BaseSpider):
 
         pdf_url = f"{pdf_base_url}/{pdf_data_param}/{id_}"  # 拼接pdf链接
 
-        pdf_content = self.req("get",url=pdf_url,headers=self.headers)
+        pdf_content = self.req("get", url=pdf_url, headers=self.headers)
         if len(pdf_content) == 0:
             self.logger.debug("错误：PDF数据为空")
             text = "pdf文件损坏"
@@ -2155,13 +2152,13 @@ class Spider18(BaseSpider):
 
     def get_cipher_text(self):
         cipher_text_url = "http://222.143.32.113:8087/permission/getSecretKey"
-        return self.req("post",cipher_text_url,headers=self.headers)
+        return self.req("post", cipher_text_url, headers=self.headers)
 
-    def des_decrypt(self,cipher_text):
+    def des_decrypt(self, cipher_text):
         key = "Ctpsp@884*"[:8].encode("utf8")
-        destor = DES.new(mode=DES.MODE_ECB,key=key)
+        destor = DES.new(mode=DES.MODE_ECB, key=key)
         bytes_cipher = base64.b64decode(cipher_text)
-        plain_text = unpad(destor.decrypt(bytes_cipher),block_size=8)
+        plain_text = unpad(destor.decrypt(bytes_cipher), block_size=8)
         return plain_text
 
 
@@ -2193,7 +2190,7 @@ class Spider19(BaseSpider):
             self.data["bulletinTitle"] = k
             self.data["currentPage"] = str(self.first_page_num)
 
-            resp = self.req("post",url=self.search_api,headers=self.headers)
+            resp = self.req("post", url=self.search_api, headers=self.headers)
             total_page = resp["pages"]
             total_data = resp["data"]
             if not total_data:
@@ -2210,16 +2207,14 @@ class Spider19(BaseSpider):
                 self.process(resp)
         return self
 
-
-    def process(self,resp):
+    def process(self, resp):
         urls = self.clean_urls(resp)
 
-        for title,release_time,origin,content,link in urls:
+        for title, release_time, origin, content, link in urls:
             text = self.clean_detail(content)
-            self.add(title,release_time,origin,text,link)
+            self.add(title, release_time, origin, text, link)
 
-
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
 
         datas = resp["data"]
         urls = []
@@ -2233,20 +2228,19 @@ class Spider19(BaseSpider):
 
             content = d["bulletinContent"]
             guid = d["guid"]
-            link = "https://www.hbggzyfwpt.cn/jyxx/zfcg/cgggDetail?guid="+guid
-            urls.append([title,release_time,origin,content,link])
+            link = "https://www.hbggzyfwpt.cn/jyxx/zfcg/cgggDetail?guid=" + guid
+            urls.append([title, release_time, origin, content, link])
 
         return urls
 
-
-    def clean_detail(self,content):
+    def clean_detail(self, content):
 
         sele = etree.HTML(content)
 
         div_tit = sele.xpath("//div[1]")[0]
         div_tit.getparent().remove(div_tit)
 
-        new_content = etree.tostring(sele,method="html",encoding="unicode")
+        new_content = etree.tostring(sele, method="html", encoding="unicode")
         text = element_to_text(new_content)
 
         return text
@@ -2277,7 +2271,7 @@ class Spider20(BaseSpider):
             self.params["noticeName"] = k
             self.params["current"] = str(self.first_page_num)
 
-            resp = self.req("get",url=self.search_api,headers=self.headers,params=self.params)
+            resp = self.req("get", url=self.search_api, headers=self.headers, params=self.params)
 
             total_page = resp["data"]["pages"]
             total_records = resp["data"]["total"]
@@ -2288,28 +2282,26 @@ class Spider20(BaseSpider):
             self.process(resp)
 
             # 分页
-            for page_num in range(self.first_page_num+1,total_page+1):
+            for page_num in range(self.first_page_num + 1, total_page + 1):
                 self.params["current"] = str(page_num)
                 resp = self.req("get", url=self.search_api, headers=self.headers, params=self.params)
                 self.process(resp)
 
         return self
 
-    def process(self,resp):
+    def process(self, resp):
 
         urls = self.clean_urls(resp)
-        for title,release_time,origin,id_,link in urls:
+        for title, release_time, origin, id_, link in urls:
             detail_url = f"https://www.hnsggzy.com/tradeApi/governmentPurchase/projectInformation/getAnnouncementBySectionId?sectionId={id_}"
 
-
-            detail = self.req("get",url=detail_url,headers=self.headers)
+            detail = self.req("get", url=detail_url, headers=self.headers)
             self.logger.debug(link)
             text = self.clean_detail(detail)
 
-            self.add(title,release_time,origin,text,link)
+            self.add(title, release_time, origin, text, link)
 
-
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
 
         datas = resp["data"]["records"]
         urls = []
@@ -2322,10 +2314,10 @@ class Spider20(BaseSpider):
             origin = d["regionName"] + "公共资源交易中心"
 
             link = f"https://www.hnsggzy.com/#/resources/projectDetail/governmentPurchase?bidSectionId={id_}"
-            urls.append([title,release_time,origin,id_,link])
+            urls.append([title, release_time, origin, id_, link])
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
 
         content = detail["data"]["governmentProcureAnnouncementInformation"][0]["noticeContent"]
         if content:
@@ -2334,14 +2326,12 @@ class Spider20(BaseSpider):
             return ""
 
 
-
-
 class Spider21(BaseSpider):
     website = "ygp.gdzwfw.gov.cn"
     name = "广东省公共资源交易平台"
     url = "https://ygp.gdzwfw.gov.cn/"
     search_api = "https://ygp.gdzwfw.gov.cn/ggzy-portal/search/v2/items"
-    channel_ids = {"工程建设":"A","政府采购":"D"}
+    channel_ids = {"工程建设": "A", "政府采购": "D"}
 
     def __init__(self):
         BaseSpider.__init__(self)
@@ -2361,11 +2351,11 @@ class Spider21(BaseSpider):
             "pageSize": 10
         }
         self.first_page_num = 1
-        self.next = False   # 当一个关键词都不存在时触发下一个关键词搜索或者下一渠道，而不是继续下一页
+        self.next = False  # 当一个关键词都不存在时触发下一个关键词搜索或者下一渠道，而不是继续下一页
 
     def master(self):
         for k in self.keys:
-            for channel_name,channel in self.channel_ids.items():
+            for channel_name, channel in self.channel_ids.items():
                 if channel_name == "政府采购":
                     self.data["tradingProcess"] = "2822,3822"
                 elif channel_name == "工程建设":
@@ -2378,7 +2368,7 @@ class Spider21(BaseSpider):
                 headers = self.update_headers()
 
                 data = json.dumps(self.data)
-                resp = self.req("post",url=self.search_api,headers=headers,data=data)
+                resp = self.req("post", url=self.search_api, headers=headers, data=data)
                 total_page = resp["data"]["pageTotal"]
                 if not total_page:
                     self.logger.info(f"[{k}] | 无数据")
@@ -2386,7 +2376,7 @@ class Spider21(BaseSpider):
                 self.process(resp)
 
                 # 分页
-                for page_num in range(self.first_page_num+1,total_page+1):
+                for page_num in range(self.first_page_num + 1, total_page + 1):
                     self.logger.info(f"第{page_num}/{total_page}页 ")
                     self.data["pageNo"] = page_num
                     data = json.dumps(self.data)
@@ -2398,14 +2388,14 @@ class Spider21(BaseSpider):
                         break
         return self
 
-    def process(self,resp):
+    def process(self, resp):
         urls = self.clean_urls(resp)
 
         node_url = "https://ygp.gdzwfw.gov.cn/ggzy-portal/center/apis/trading-notice/new/nodeList"
         detail_url = "https://ygp.gdzwfw.gov.cn/ggzy-portal/center/apis/trading-notice/new/detail"
-        for title,date_,origin,notice_id,\
-            version,project_code,site_code,\
-             trading_process,project_type,channel in urls:
+        for title, date_, origin, notice_id, \
+                version, project_code, site_code, \
+                trading_process, project_type, channel in urls:
 
             # 请求详情内容接口之前的查询参数的接口
             node_params = {
@@ -2416,8 +2406,7 @@ class Spider21(BaseSpider):
                 "classify": project_type
             }
 
-
-            node_data = self.req("get",url=node_url,headers=self.headers,params=node_params)
+            node_data = self.req("get", url=node_url, headers=self.headers, params=node_params)
             node_id = None  # 默认
             for i in node_data["data"]:
                 if notice_id in str(i):
@@ -2431,22 +2420,22 @@ class Spider21(BaseSpider):
             detail_params = {
                 "nodeId": str(node_id),
                 "version": str(version),
-                "tradingType":  self.data["secondType"],
+                "tradingType": self.data["secondType"],
                 "noticeId": str(notice_id),
                 "bizCode": str(trading_process),
                 "projectCode": str(project_code),
                 "siteCode": str(site_code)
             }
-            detail = self.req("get",url=detail_url,headers=self.headers,params=detail_params)
+            detail = self.req("get", url=detail_url, headers=self.headers, params=detail_params)
 
             text = self.clean_detail(detail)
             # 格式化时间
             dt = datetime.datetime.strptime(date_, "%Y%m%d%H%M%S")
             release_time = dt.strftime("%Y-%m-%d %H:%M:%S")
-            self.add(title,release_time,origin,text,link)
+            self.add(title, release_time, origin, text, link)
             time.sleep(2)
 
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
 
         datas = resp["data"]["pageData"]
         urls = []
@@ -2463,34 +2452,33 @@ class Spider21(BaseSpider):
             origin = d["pubServicePlat"]
             date_ = d["publishDate"]
 
-
             notice_id = d["noticeId"]
             version = d["edition"]
             project_code = d["projectCode"]
-            site_code=d["regionCode"]
+            site_code = d["regionCode"]
             trading_process = d["tradingProcess"]
             project_type = d["projectType"]
             channel = d["noticeSecondType"]
             self.logger.debug(title)
-            urls.append([title,date_,origin,
-                         notice_id,version,project_code,
-                         site_code,trading_process,project_type,channel])
+            urls.append([title, date_, origin,
+                         notice_id, version, project_code,
+                         site_code, trading_process, project_type, channel])
 
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
 
         content = detail["data"]["tradingNoticeColumnModelList"][1]["richtext"]
         text = element_to_text(content)
         return text
 
-    def standard_time(self,tt):
-        date_ = datetime.datetime.strptime(tt,"%Y-%m-%d")
+    def standard_time(self, tt):
+        date_ = datetime.datetime.strptime(tt, "%Y-%m-%d")
         return date_.strftime("%Y%m%d%H%M%S")
 
     def update_headers(self):
         headers = {}
-        headers["Content-Type"] ="application/json"
+        headers["Content-Type"] = "application/json"
         headers.update(self.headers)
 
         return headers
@@ -2507,8 +2495,8 @@ class Spider22(BaseSpider):
         self.run_flag = False
         self.data = {
             "code": "181aedab55d",
-            "beginDateTime":self.standard_time(self.start_time),
-            "endDateTime":self.standard_time(self.end_time),
+            "beginDateTime": self.standard_time(self.start_time),
+            "endDateTime": self.standard_time(self.end_time),
             "dataTypeId": "18547",
             "configCode": "",
             "searchWord": "卫星",
@@ -2535,7 +2523,7 @@ class Spider22(BaseSpider):
 
             headers = self.update_headers()
             data = json.dumps(self.data)
-            resp = self.req("post",url=self.search_api,headers=headers,data=data)
+            resp = self.req("post", url=self.search_api, headers=headers, data=data)
 
             total_records = resp["data"]["pager"]["total"]
             total_page = math.ceil(total_records / self.data["pageSize"])
@@ -2546,21 +2534,19 @@ class Spider22(BaseSpider):
 
             self.process(resp)
 
-
         return self
 
-    def process(self,resp):
+    def process(self, resp):
 
         urls = self.clean_urls(resp)
-        for title,release_time,origin,link in urls:
-
-            detail = self.req("get",url=link,headers=self.headers)
+        for title, release_time, origin, link in urls:
+            detail = self.req("get", url=link, headers=self.headers)
 
             text = self.clean_detail(detail)
 
-            self.add(title,release_time,origin,text,link)
+            self.add(title, release_time, origin, text, link)
 
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
 
         urls = []
         datas = resp["data"]["middle"]["listAndBox"]
@@ -2573,32 +2559,30 @@ class Spider22(BaseSpider):
             origin = d["data"]["source"]
             release_time = d["data"]["time"]
 
-            urls.append([title,release_time,origin,link])
+            urls.append([title, release_time, origin, link])
 
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
 
         sele = etree.HTML(detail)
         content_ele = sele.xpath(".//div[@class='ewb-page-line']/div[3]")[0]
-        content = etree.tostring(content_ele,method="html",encoding="unicode")
+        content = etree.tostring(content_ele, method="html", encoding="unicode")
 
         return element_to_text(content)
 
     def update_headers(self):
-        headers={}
+        headers = {}
         headers["Content-Type"] = "application/json"
-
 
         headers.update(self.headers)
 
         return headers
 
-    def standard_time(self,tt):
+    def standard_time(self, tt):
 
-        dt = datetime.datetime.strptime(tt,"%Y-%m-%d")
-        return int(dt.timestamp()*1000)
-
+        dt = datetime.datetime.strptime(tt, "%Y-%m-%d")
+        return int(dt.timestamp() * 1000)
 
 
 class Spider23(BaseSpider):
@@ -2662,8 +2646,8 @@ class Spider23(BaseSpider):
         }
         self.first_page_num = 0
         self.channel_data = {
-            "工程建设":"003001002",
-            "政府采购":"003002002"
+            "工程建设": "003001002",
+            "政府采购": "003002002"
         }
 
     def master(self):
@@ -2675,7 +2659,7 @@ class Spider23(BaseSpider):
                 self.data["condition"][1]["equal"] = channel_id
 
                 data = json.dumps(self.data)
-                resp = self.req("post",url=self.search_api,headers=self.headers,data=data)
+                resp = self.req("post", url=self.search_api, headers=self.headers, data=data)
 
                 total_page = math.ceil(resp["result"]["totalcount"] / self.data["rn"])
                 if not total_page:
@@ -2684,9 +2668,8 @@ class Spider23(BaseSpider):
 
                 self.process(resp)
 
-
                 # 分页
-                for page_num in range(self.first_page_num+1,total_page+1):
+                for page_num in range(self.first_page_num + 1, total_page + 1):
                     self.data["pn"] = page_num * self.data["rn"]
 
                     data = json.dumps(self.data)
@@ -2694,13 +2677,12 @@ class Spider23(BaseSpider):
 
                     self.process(resp)
 
-
         return self
 
-    def process(self,resp):
+    def process(self, resp):
 
         urls = self.clean_urls(resp)
-        for title, release_date, origin,link in urls:
+        for title, release_date, origin, link in urls:
             detail = self.req("get", url=link, headers=self.headers)
             try:
                 text = self.clean_detail(detail)
@@ -2710,7 +2692,7 @@ class Spider23(BaseSpider):
 
             self.add(title, release_date, origin, text, link)
 
-    def clean_urls(self,resp):
+    def clean_urls(self, resp):
         urls = []
         records = resp["result"]["records"]
 
@@ -2719,15 +2701,14 @@ class Spider23(BaseSpider):
             if self.adopt_title_filter(title):
                 continue
 
-
             release_date = d["infodate"]
             link = self.url + d["linkurl"]
             origin = d["zhuanzai"]
-            urls.append([title, release_date, origin,link])
+            urls.append([title, release_date, origin, link])
 
         return urls
 
-    def clean_detail(self,detail):
+    def clean_detail(self, detail):
         sele = etree.HTML(detail)
         div_content = sele.xpath(".//div[@class='article-info jyxx-info']")[0]
 
@@ -2741,34 +2722,450 @@ class Spider23(BaseSpider):
 
         return text
 
-    def standard_time(self,tt):
+    def standard_time(self, tt):
 
         return tt + " 00:00:00"
 
-
-
-
-class Spider24(BaseSpider):
-    website = ""
-    name = ""
-    url = ""
-    search_api = ""
+class Spider47(BaseSpider):
+    website = "yaggzy.org.cn"
+    name = "雅安市公共资源交易平台"
+    url = "https://www.yaggzy.org.cn"
+    search_api = {
+        "建设工程": "https://www.yaggzy.org.cn/jyxx/jsgcZbgg",
+        "政府采购": "https://www.yaggzy.org.cn/jyxx/zfcg/cggg"
+    }
 
     def __init__(self):
         BaseSpider.__init__(self)
         self.run_flag = False
+        self.params = {
+            "建设工程": {
+                "area": "001",
+                "isYiFaZhaoBiao": "1"
+            },
+            "政府采购": {
+                "area": "001"
+            }
+        }
+        self.data = {
+            "建设工程": {
+                "currentPage": "1",
+                "secondArea": "000",
+                "industriesTypeCode": 000,
+                "bulletinTitle": "办公"
+            },
+            "政府采购": {"currentPage": "1",
+                         "secondArea": "000",
+                         "bulletinTitle": "办公"}
+        }
+
+        self.first_page_num = 1
+        self.is_next = True
 
     def master(self):
+        for chanel, search_api in self.search_api.items():
+            for k in self.keys:
+                self.data["bulletinTitle"] = k
+                self.data["currentPage"] = str(self.first_page_num)
+
+                resp = self.req("post", url=search_api, headers=self.headers, params=self.params[chanel],
+                                data=self.data[chanel])
+                # 获取总页数
+                total_page = self.get_total_page(resp)
+                if not total_page:
+                    self.logger.info(f"[{k}] | 无数据")
+
+                self.process(resp)
+
+                # 分页
+                for page_num in range(self.first_page_num + 1, total_page + 1):
+                    if not self.is_next:
+                        break
+
+                    self.data["currentPage"] = str(page_num)
+                    resp = self.req("post", url=search_api, headers=self.headers, params=self.params[chanel],
+                                    data=self.data[chanel])
+                    self.process(resp)
+
         return self
 
-    def clean(self):
-        pass
+    def process(self, resp):
 
-    def is_next(self):
-        pass
+        urls = self.clean_urls(resp)
+        for tit, link in urls:
+
+            detail = self.req("get", url=link, headers=self.headers)
+            res = self.clean_detail(detail)
+            if res == "停":
+                break
+            release_time, text, origin = res
+
+            self.add(tit, release_time, origin, text, link)
+
+    def clean_urls(self, resp):
+
+        sele = etree.HTML(resp)
+        urls = []
+        li_eles = sele.xpath(".//li[@class='clearfloat']/table/tr")[1:]
+        for li in li_eles:
+            tit = li.xpath("./td[3]/a/text()")[0].strip()
+            if self.adopt_title_filter(tit):
+                continue
+
+            status = li.xpath("./td[last()]/text()")[0]
+            if status == "已结束":
+                continue
+
+            link = self.url + li.xpath("./td[3]/a/@href")[0]
+
+            urls.append([tit, link])
+
+        return urls
+
+    def clean_detail(self, detail):
+        sele = etree.HTML(detail)
+        time_ele = sele.xpath(".//div[@class='time']/text()")[0]
+
+        release_time = re.findall("[0-9]{4}-[0-9]{2}-[0-9]{2}", time_ele)[0]
+
+        if self.time_fileter(release_time):
+            self.is_next = False
+            return "停"
+
+        content_ele = sele.xpath(".//*[@class='nr']")[0]
+        content = etree.tostring(content_ele, method="html", encoding="unicode")
+        text = element_to_text(content)
+        origin = None
+
+        return release_time, text, origin
+
+    def time_fileter(self, release_time):
+
+        release_time = datetime.datetime.strptime(release_time, "%Y-%m-%d")
+        start_time = datetime.datetime.strptime(self.start_time, "%Y-%m-%d")
+
+        if release_time < start_time:
+            return True
+        return False
+
+    def get_total_page(self, resp):
+
+        sele = etree.HTML(resp)
+        total_page = sele.cssselect("div.mmggxlh > a")[-2].text
+
+        li_eles = sele.xpath(".//li[@class='clearfloat']/table/tr")[1:]
+        # 如果第一页没有数据，说明总页数为0
+        if not li_eles:
+            return 0
+        return int(total_page.strip())
 
 
+class Spider48(BaseSpider):
+    website = "msggzy.org.cn"
+    name = "眉山市政务服务和公共资源交易服务中心"
+    url = "https://www.msggzy.org.cn/front"
+    search_api = "https://www.msggzy.org.cn/EWB-FRONT/rest/GgSearchAction/getInfoMationList"
 
+    def __init__(self):
+        BaseSpider.__init__(self)
+        self.run_flag = True
+        self.is_next = True  # 判断是否继续请求，遇到时间比开始时间还久远的就不再继续
+        self.params = {
+            "siteGuid": "7eb5f7f1-9041-43ad-8e13-8fcb82ea831a",
+            "categoryNum": "",
+            "kw": "办公",
+            "pageIndex": 3,
+            "pageSize": 20
+        }
+        self.first_page_num = 0
+
+    def master(self):
+        for k in self.keys:
+            self.params["kw"] = k
+            self.params["pageIndex"] = self.first_page_num
+
+            data = {"params": json.dumps(self.params, separators=(",", ":"))}
+            resp = self.req("post", url=self.search_api, headers=self.headers, data=data)
+            total_page = math.ceil(resp["AllCount"] / self.params["pageSize"])
+
+            if not total_page:
+                self.logger.info(f"[{k}] | 无数据")
+                continue
+
+            self.process(resp)
+
+            for page_num in range(self.first_page_num + 1, total_page + 1):
+                if not self.is_next:
+                    break
+
+                self.params["pageIndex"] = page_num
+                data = {"params": json.dumps(self.params, separators=(",", ":"))}
+                resp = self.req("post", url=self.search_api, headers=self.headers, data=data)
+                self.process(resp)
+
+        return self
+
+    def process(self, resp):
+        urls = self.clean_urls(resp)
+
+        for title, release_time, origin, link in urls:
+            detail = self.req("get", url=link, headers=self.headers)
+            text = self.clean_detail(detail)
+
+            self.add(title, release_time, origin, text, link)
+
+    def clean_urls(self, resp):
+        datas = resp["custom"]
+        urls = []
+        for d in datas:
+            title = d["title"]
+            if self.adopt_title_filter(title):
+                continue
+
+            origin = d["zhuanzai"]
+
+            release_time = d["infodate"]
+            if self.time_fileter(release_time):
+                self.is_next = False
+                break  # 遇到时间比较久的直接跳出循环，因为后面的时间更久远
+
+            link = "https://www.msggzy.org.cn/front" + d["infourl"]
+            urls.append([title, release_time, origin, link])
+        return urls
+
+    def clean_detail(self, detail):
+
+        sele = etree.HTML(detail)
+        content_ele = sele.xpath(".//div[@class='the-content']/div[2]")[0]
+        content = etree.tostring(content_ele, method="html", encoding="unicode")
+
+        text = element_to_text(content)
+        return text
+
+    def time_fileter(self, release_time):
+
+        release_time = datetime.datetime.strptime(release_time, "%Y-%m-%d")
+        start_time = datetime.datetime.strptime(self.start_time, "%Y-%m-%d")
+
+        if release_time < start_time:
+            return True
+        return False
+
+
+class Spider49(BaseSpider):
+    website = "b2b.10086.cn"
+    name = "中国移动采购与招标网"
+    url = "https://b2b.10086.cn"
+    search_api = "https://b2b.10086.cn/api-b2b/api-sync-es/white_list_api/b2b/publish/queryList"
+
+    def __init__(self):
+        BaseSpider.__init__(self)
+        self.run_flag = False
+        self.first_page_num = 1
+        self.data = {
+            "name": "办公",
+            "publishType": "PROCUREMENT",
+            "purchaseType": "",
+            "companyType": "",
+            "size": 20,
+            "current": 1,
+            "creationDateStart": self.start_time,
+            "creationDateEnd": self.end_time,
+            "sfactApplColumn5": "PC"
+        }
+
+    def master(self):
+        for k in self.keys:
+            self.data["name"] = k
+            self.data["current"] = self.first_page_num
+
+            headers = self.update_headers()
+            data = json.dumps(self.data)
+            resp = self.req("post", url=self.search_api, headers=headers, data=data)
+
+            # 获取总页数
+            total_page = math.ceil(resp["data"]["totalElements"] / self.data["size"])
+
+            if not total_page:
+                self.logger.info(f"[{k}] | 无数据")
+                continue
+
+            self.process(resp)
+
+            # 分页
+            for page_num in range(self.first_page_num + 1, total_page + 1):
+                self.data["current"] = page_num
+                data = json.dumps(self.data)
+                resp = self.req("post", url=self.search_api, headers=headers, data=data)
+                self.process(resp)
+
+        return self
+
+    def process(self, resp):
+        urls = self.clean_urls(resp)
+
+        for id_, uuid_, title, publish_type, publish_one_type, release_time in urls:
+            # 拼接人工访问的详情链接
+            link = f"https://b2b.10086.cn/#/noticeDetail?publishId={id_}&publishUuid={uuid_}&publishType={publish_type}&publishOneType={publish_one_type}"
+
+            # 详情接口
+            detail_url = "https://b2b.10086.cn/api-b2b/api-sync-es/white_list_api/b2b/publish/queryDetail"
+            detail_data = {
+                "publishId": id_,
+                "publishUuid": uuid_,
+                "publishType": publish_type,
+                "sfactApplColumn5": "PC"
+            }
+
+            data = json.dumps(detail_data)
+            headers = self.update_headers()
+            detail = self.req("post", url=detail_url, headers=headers, data=data)
+            text = self.clean_detail(detail)
+            origin = None
+
+            self.add(title, release_time, origin, text, link)
+
+    def clean_urls(self, resp):
+
+        datas = resp["data"]["content"]
+        urls = []
+        for d in datas:
+            title = d["name"]
+            if self.adopt_title_filter(title):
+                continue
+
+            id_ = d["id"]
+            uuid_ = d["uuid"]
+            publish_type = d["publishType"]
+            publish_one_type = d["publishOneType"]
+            release_time = d["backDate"]
+
+            urls.append([id_, uuid_, title, publish_type, publish_one_type, release_time])
+
+        return urls
+
+    def clean_detail(self, detail):
+        b64_content = detail["data"]["noticeContent"]
+        content = base64.b64decode(b64_content)
+        text = pdf_to_text(content)
+        return text
+
+    def update_headers(self):
+        headers = {}
+
+        headers.update(self.headers)
+        headers["Content-Type"] = "application/json"
+
+        return headers
+
+
+class Spider51(BaseSpider):
+    website = "caigou.chinatelecom.com.cn"
+    name = "中国电信阳光采购网"
+    url = "https://caigou.chinatelecom.com.cn"
+    search_api = "https://caigou.chinatelecom.com.cn/portal/base/announcementJoin/queryListNew"
+
+    def __init__(self):
+        BaseSpider.__init__(self)
+        self.run_flag = False
+        self.data = {
+            "pageNum": 2,
+            "pageSize": 10,
+            "title": "卫星",
+            "queryStartTime": "2025-06-01",
+            "provinceCode": "",
+            "queryEndTime": "2025-08-20",
+            "noticeSummary": "",
+            "type": "e2no"  # 表示查询招标公告
+        }
+        self.first_page_num = 1
+
+    def master(self):
+        for k in self.keys:
+            self.data["title"] = k
+            self.data["pageNum"] = self.first_page_num
+
+            headers = self.update_headers()
+            data = json.dumps(self.data)
+            resp = self.req("post", url=self.search_api, headers=headers, data=data)
+            total_page = self.gain_total_page(resp)
+            if not total_page:
+                self.logger.info(f"[{k}] | 无数据")
+
+            self.process(resp)
+
+            # 分页
+            for page_num in range(self.first_page_num + 1, total_page + 1):
+                self.logger.info(f"第{page_num}页")
+                self.data["pageNum"] = page_num
+                data = json.dumps(self.data)
+                resp = self.req("post", url=self.search_api, headers=headers, data=data)
+                self.process(resp)
+
+        return self
+
+    def process(self, resp):
+
+        urls = self.clean_urls(resp)
+        for title, release_time, id_, doc_type, view_code in urls:
+            headers = self.update_headers()
+            link = ("https://caigou.chinatelecom.com.cn/DeclareDetails?"
+                    f"id={id_}&"
+                    "type=1&"
+                    f"docTypeCode={doc_type}&"
+                    f"securityViewCode={view_code}")
+
+            detail_url = "https://caigou.chinatelecom.com.cn/portal/base/tenderannouncement/view"
+            detail_form = {
+                "type": doc_type,
+                "id": id_,
+                "securityViewCode": view_code
+            }
+
+            detail_form = json.dumps(detail_form)
+            detail = self.req("post", url=detail_url, headers=headers, data=detail_form)
+            origin = None
+
+            text = self.clean_detail(detail)
+            self.add(title, release_time, origin, text, link)
+
+    def clean_urls(self, resp):
+
+        datas = resp["data"]["pageInfo"]["list"]
+        urls = []
+        for d in datas:
+            title = d["docTitle"]
+            if self.adopt_title_filter(title):
+                continue
+            if d["docType"] == "采购结果":
+                continue
+
+            release_time = d["createDate"]
+            id_ = d["docId"]
+            doc_type = d["docTypeCode"]
+            view_code = d["securityViewCode"]
+            urls.append([title, release_time, id_, doc_type, view_code])
+        return urls
+
+    def clean_detail(self, detail):
+
+        content = detail["data"]["context"]
+        text = element_to_text(content)
+        return text
+
+    def update_headers(self):
+
+        headers = {}
+        headers["content-type"] = "application/json;charset=UTF-8"
+
+        headers.update(self.headers)
+
+        return headers
+
+    def gain_total_page(self, resp):
+        total_records = resp["data"]["pageInfo"]["total"]
+
+        return math.ceil(int(total_records) / int(self.data["pageNum"]))
 
 
 if __name__ == '__main__':

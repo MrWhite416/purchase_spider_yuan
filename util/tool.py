@@ -85,7 +85,7 @@ def summary_df(df_list:list):
 def pdf_to_text(content:bytes) -> str:
     """ pdf转文本 """
 
-    # 1. 打开 PDF（with 语句自动关闭文件，避免内存泄漏）
+    # 1. 打开 PDF
     doc = fitz.Document(stream=content)
     total_pages = doc.page_count
     full_text = ""

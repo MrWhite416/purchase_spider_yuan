@@ -1,16 +1,13 @@
 # development time: 2025-08-20  14:15
 # developer: 元英
 import math
+import time
 
 # import requests
 from curl_cffi import Session
 from curl_cffi.requests.exceptions import HTTPError, ConnectionError, Timeout  # 导入curl_cffi的异常类
 
-from typing import Callable
-import pandas
-from lxml import etree
-import json
-from urllib3.util.retry import Retry
+
 from util.log import logger
 from types import FunctionType
 from setting import *
@@ -26,7 +23,7 @@ def exception_handler(func):
             return func(self, *args, **kwargs)
         except Exception as e:
             # 统一异常处理：日志记录、返回默认值等
-            logger.error(f"方法 {func.__name__} 执行出错: {str(e)}", exc_info=True)
+            logger.error(f"来自 {self.__class__.__name__}（{self.name}） 类的方法 {func.__name__} 执行出错: {str(e)}", exc_info=True)
             # raise  # 可根据需求返回默认值或自定义结果
     return wrapper
 
@@ -85,7 +82,7 @@ class BaseSpider(metaclass=ExceptionHandlerMeta):
 
     def _init_dataframe(self) -> dict:
         """通用数据存储结构：所有子类统一"""
-        return {"标题": [], "时间": [], "来源": [], "正文": [], "链接": [], "所在网站": []}
+        return {"标题": [], "时间": [], "来源": [], "链接": [], "所在网站": [], "正文": []}
 
     # ------------------------------ 通用工具方法（子类直接使用） ------------------------------
     def adopt_title_filter(self, title: str) -> bool:
@@ -100,11 +97,11 @@ class BaseSpider(metaclass=ExceptionHandlerMeta):
 
     def add(self, title: str, date: str, origin: str | None, content: str, link: str) -> None:
         """数据存储：通用逻辑"""
-        self.df["标题"].append(title.strip())
+        self.df["标题"].append(title.strip() if title else None)
         self.df["时间"].append(date.strip())
-        self.df["来源"].append(origin)
-        self.df["正文"].append(content.strip())
-        self.df["链接"].append(link.strip())
+        self.df["来源"].append(origin.strip() if origin else None)
+        self.df["正文"].append(content.strip() if content else None)
+        self.df["链接"].append(link.strip() if link else None)
         self.df["所在网站"].append(self.name)
         self.logger.info(f"已添加：{title} | {link}")
 
@@ -130,18 +127,21 @@ class BaseSpider(metaclass=ExceptionHandlerMeta):
         for i in range(3):  # 重试三次
 
             try:
-                resp = fetch_func(url, headers=headers, params=params, json=json_d, data=data, verify=False)
+                resp = fetch_func(url, headers=headers, params=params, json=json_d, data=data, verify=False,timeout=60)
                 resp.raise_for_status()
                 break  # 只要请求不出错就不重试
+
+            except HTTPError as e:
+                self.logger.error(f"请求出错（状态码不为2）；{e} | 链接：{url}")
+                time.sleep(3)
+                continue  # 请求出错就重试
             except Exception as e:
                 self.logger.error(f"链接：{url} | 请求头：{headers} | 请求参数：{params or json_d or data} | 请求出错：{e}")
                 if i == 2:
                     self.logger.critical(
                         f"链接：{url} | 请求头：{headers} | 请求参数：{params or json_d or data} | <三次请求全部失败>：{e}")
                 continue  # 请求出错就重试
-            except HTTPError as e:
-                self.logger.error(f"请求出错（状态码不为2）；{e} | 链接：{url}")
-                continue  # 请求出错就重试
+
 
         try:
             return resp.json()

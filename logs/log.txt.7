@@ -1,1 +1,9 @@
-2025-08-29 16:05:18,469 | INFO | ThreadPoolExecutor-0_0 | base_spider.py:109 | add | 已添加：“加强企业人工智能人才队伍建设赋能千亿陶瓷产业集群建设”专项行动项目竞争性磋商公告 | https://www.ggzy.gov.cn/information/html/b/350000/0201/202506/13/003547d3bd3eda574a148386f64e4f17bd03.shtml
+2025-09-01 18:26:21,702 | ERROR | ThreadPoolExecutor-0_0 | base_spider.py:26 | wrapper | 来自 Spider48（眉山市政务服务和公共资源交易服务中心） 类的方法 clean_detail 执行出错: list index out of range
+Traceback (most recent call last):
+  File "D:\YuanYing'sProject\purchaseInformationProject\Purchase\spiders\base_spider.py", line 23, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\YuanYing'sProject\purchaseInformationProject\Purchase\spiders\spiders.py", line 2939, in clean_detail
+    content_ele = sele.xpath(".//div[@class='the-content']/div[2]")[0]
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range

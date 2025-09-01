@@ -1,1 +1,9 @@
-2025-08-29 16:05:20,715 | INFO | ThreadPoolExecutor-0_0 | base_spider.py:109 | add | 已添加：上杭县医院影像人工智能分析系统采购项目(二次)竞争性磋商公告 | https://www.ggzy.gov.cn/information/html/b/350000/0201/202506/13/00352bb9bc0bfecb41e4b12a75eec9714d5c.shtml
+2025-09-01 18:26:21,732 | ERROR | ThreadPoolExecutor-0_0 | base_spider.py:26 | wrapper | 来自 Spider48（眉山市政务服务和公共资源交易服务中心） 类的方法 clean_detail 执行出错: list index out of range
+Traceback (most recent call last):
+  File "D:\YuanYing'sProject\purchaseInformationProject\Purchase\spiders\base_spider.py", line 23, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\YuanYing'sProject\purchaseInformationProject\Purchase\spiders\spiders.py", line 2939, in clean_detail
+    content_ele = sele.xpath(".//div[@class='the-content']/div[2]")[0]
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range

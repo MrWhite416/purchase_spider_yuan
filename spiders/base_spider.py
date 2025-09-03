@@ -71,6 +71,9 @@ class BaseSpider(metaclass=ExceptionHandlerMeta):
         self.logger = logger
         self.temp_meta = {"release_time": "", "origin": ""}  # 临时存储详情页元数据
 
+    def __str__(self):
+        return self.name
+
 
     # ------------------------------ 通用工具：基础配置（子类极少覆盖） ------------------------------
     def _get_default_headers(self) -> dict:

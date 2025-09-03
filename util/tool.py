@@ -7,6 +7,17 @@ import fitz  # PyMuPDF 的导入名是 fitz，不是 pymupdf
 import time
 import re
 from util.infer import AI_filter
+from setting import sender_email,sender_auth_code, default_recipients,attachment_paths
+
+import smtplib
+from datetime import datetime,timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from typing import Optional, List
+from email.utils import formatdate
+
+
 
 
 def element_to_text(content:str):
@@ -125,7 +136,6 @@ def pdf_to_text(content:bytes) -> str:
     full_text = ""
 
 
-
     # 2. 逐页提取文本（批量处理比单页循环更高效）
     for page_num in range(total_pages):
         page = doc[page_num]
@@ -134,5 +144,165 @@ def pdf_to_text(content:bytes) -> str:
         full_text += page_text + "\n\n"  # 页间加空行分隔
 
     return full_text
+
+
+
+# 邮件发送函数
+def send_163_email(
+        subject: str,
+        content: str,
+        recipients: Optional[List[str]] = None,
+        attachments: Optional[List[str]] = None,
+        content_type: str = "plain"  # "plain"=纯文本，"html"=HTML格式
+) -> bool:
+    """
+    163邮箱发送函数
+    :param subject: 邮件主题（支持中文）
+    :param content: 邮件内容
+    :param recipients: 收件人列表（默认用EmailConfig.default_recipients）
+    :param attachment_paths: 附件路径列表（如["data.xlsx", "log.txt"]，可选）
+    :param content_type: 内容格式（纯文本/HTML）
+    :return: 发送成功返回True，失败返回False
+    """
+    # 处理默认参数
+    if recipients is None:
+        recipients = default_recipients
+    if attachments is None:
+        attachments = attachment_paths
+
+    try:
+        # 1. 构造邮件对象（带附件需用MIMEMultipart）
+        msg = MIMEMultipart()
+        msg["Message-ID"] = f"<{datetime.now().timestamp()}@{sender_email.split('@')[1]}>"
+        msg["Date"] = formatdate(localtime=True)  # 本地时间格式
+        msg["From"] = sender_email
+        msg["To"] = Header(", ".join(recipients), "utf-8")
+        # 邮件主题（中文需用Header处理，避免乱码）
+        msg["Subject"] = Header(subject, "utf-8")
+
+        # 2. 添加邮件正文
+        content_part = MIMEText(content, content_type, "utf-8")
+        msg.attach(content_part)
+
+        # 3. 添加附件（若有）
+        for attach_path in attachments:
+            try:
+                # 二进制读取附件文件
+                with open(attach_path, "rb") as f:
+                    # 构造附件对象（base64编码，支持所有文件类型）
+                    attach = MIMEText(f.read(), "base64", "utf-8")
+                    attach["Content-Type"] = "application/octet-stream"
+                    # 设置附件显示名称（中文需用Header，避免乱码）
+                    attach_filename = attach_path.split("/")[-1]  # 提取文件名
+                    attach.add_header(
+                        "Content-Disposition",
+                        "attachment",
+                        filename=(Header(attach_filename, "utf-8").encode())
+                    )
+                    msg.attach(attach)
+                print(f"附件添加成功：{attach_filename}")
+            except Exception as e:
+                print(f"附件添加失败：{str(e)}")
+                continue  # 单个附件失败不影响整体邮件发送
+
+        # 4. 连接163 SMTP服务器并发送
+        with smtplib.SMTP_SSL("smtp.163.com", 465) as smtp:
+            # 登录SMTP服务器（用163授权码，不是原密码）
+            smtp.login(sender_email, sender_auth_code)
+            # 发送邮件（from_addr=发件人，to_addrs=收件人列表，msg=邮件字符串）
+            smtp.sendmail(
+                from_addr=sender_email,
+                to_addrs=recipients,
+                msg=msg.as_string()
+            )
+
+        # 发送成功日志
+        print(f"邮件发送成功！主题：{subject} | 收件人：{', '.join(recipients)}")
+        return True
+
+    except Exception as e:
+        # 发送失败日志（含详细错误堆栈，方便排查）
+        print(f"邮件发送失败！主题：{subject} | 错误：{str(e)}")
+        return False
+
+
+
+
+def get_target_time(first: bool) -> str:
+    """
+    根据first变量的值，返回对应的时间（包含年月日时分秒）
+
+    :param first: 布尔值，True则返回一周前的时间，False则返回昨天的时间
+    :return: 格式化的时间字符串，格式为"YYYY-MM-DD HH:MM:SS"
+    """
+    # 获取当前时间
+    current_time = datetime.now()
+
+    # 根据first的值判断需要计算几天前的时间
+    if first:
+        # first为True，计算一周前（7天前）的时间
+        target_time = current_time - timedelta(days=7)
+    else:
+        # first为False，计算昨天（1天前）的时间
+        target_time = current_time - timedelta(days=1)
+
+    # 格式化时间并返回
+    return target_time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def clean_old_data(excel_path, output_path=None):
+    """
+    清洗Excel中的旧数据，保留3个月内的新数据
+    :param excel_path: 原始Excel文件路径
+    :param output_path: 清洗后的数据保存路径（默认覆盖原文件）
+    """
+    # 1. 读取Excel文件
+    try:
+        df = pd.read_excel(excel_path)
+    except Exception as e:
+        print(f"读取文件失败：{str(e)}")
+        return
+
+    new_release = []
+    for tt in df["时间"]:
+        # 判断是否为xx年xx月xx（日）
+        if "年" in tt:
+            n_t = tt.replace("年", "-").replace("月", "-").replace("日", "")[:10]
+        # 判断是否为xx.xx.xx
+        elif "." in tt:
+            n_t = tt.replace(".", "-")[:10]
+        else:
+            n_t = tt[:10]
+
+        n_t = datetime.strptime(n_t,"%Y-%m-%d").date()
+        new_release.append(n_t)
+
+    df["时间"] = new_release
+
+    # 4. 计算3个月前的日期（作为判断新旧的临界点）
+    today = datetime.now().date()
+    three_months_ago = today - timedelta(days=3 * 30)  # 简化计算：按每月30天
+
+    # 5. 过滤数据：保留 release_time 在3个月内的新数据
+    # 条件：release_time > 三个月前 且 时间有效（不是NaT）
+    mask = (df["时间"] > three_months_ago) & (df["时间"].notna())
+    new_data = df[mask]
+    old_data_count = len(df) - len(new_data)
+
+    # 6. 输出清洗结果
+    print(f"清洗完成：原始数据共 {len(df)} 条，过滤旧数据 {old_data_count} 条，保留新数据 {len(new_data)} 条")
+
+    # 7. 保存清洗后的数据
+    if output_path is None:
+        output_path = excel_path  # 默认覆盖原文件
+    try:
+        new_data.to_excel(output_path, index=False)
+        print(f"清洗后的数据已保存至：{output_path}")
+    except Exception as e:
+        print(f"保存文件失败：{str(e)}")
+
+
+
+
 
 

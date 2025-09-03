@@ -1,7 +1,7 @@
 import requests
 import json
 import pandas
-import log
+from util import log
 
 # 定义 API 地址
 url = "http://192.168.128.34:8000/v1/chat/completions"

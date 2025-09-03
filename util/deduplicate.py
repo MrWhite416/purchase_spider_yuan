@@ -1,7 +1,9 @@
 import pandas as pd
-
+from util.log import logger
 
 def deduplication(data: str | pd.DataFrame):
+    logger.info("去重中... ...")
+
     if isinstance(data,str):
         # 读取 Excel 文件
         excel_path = data
@@ -16,6 +18,6 @@ def deduplication(data: str | pd.DataFrame):
     df_deduplicated = df.drop_duplicates(subset=columns_to_deduplicate, keep='first')
 
     # 保存到新的 Excel 文件
-    df_deduplicated.to_excel('AI_fiter_data_deduplicated.xlsx', index=False)
+    df_deduplicated.to_excel('all_data.xlsx', index=False)
 
-    print("去重完成，已保存为 AI_fiter_data_deduplicated.xlsx")
+    print("去重完成，已保存为 all_data.xlsx")

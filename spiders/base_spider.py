@@ -103,7 +103,7 @@ class BaseSpider(metaclass=ExceptionHandlerMeta):
         self.df["正文"].append(content.strip() if content else None)
         self.df["链接"].append(link.strip() if link else None)
         self.df["所在网站"].append(self.name)
-        self.logger.info(f"已添加：{title} | {link}")
+        self.logger.info(f"已添加：{title} | {link} | 网站：{self.name}")
 
     def save(self, save_path: str = "spider_result.xlsx") -> None:
         """数据保存：通用逻辑"""

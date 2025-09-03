@@ -6,6 +6,7 @@ import pandas as pd
 import fitz  # PyMuPDF 的导入名是 fitz，不是 pymupdf
 import time
 import re
+from util.infer import AI_filter
 
 
 def element_to_text(content:str):
@@ -59,14 +60,14 @@ def element_to_text(content:str):
     return text
 
 
-def summary_df(df_list:list):
+def summary_df(file_path:str,df_list:list):
     """
-    汇总所有df
+    汇总+存储所有df
     :param df_list:
     :return:
     """
 
-    dfs=[]
+    dfs = []
     for d in df_list:
         # 校验字典是否为类DataFrame格式（所有值都是等长列表）
         lengths = [len(v) for v in d.values()]
@@ -77,9 +78,42 @@ def summary_df(df_list:list):
     # 2. 纵向合并所有DataFrame（行合并）
     merged_df = pd.concat(dfs, axis=0, ignore_index=True)
 
-    # 3. 导出为Excel
-    merged_df.to_excel("./all_data.xlsx", index=False)
-    print(f"合并完成！，共 {len(merged_df)} 行数据")
+    save_df = AI_filter(merged_df)
+
+
+    # 步骤1：读取已有文件的工作表，获取当前数据的行数（用于定位追加位置）
+    try:
+        existing_df = pd.read_excel(file_path, sheet_name="Sheet1", engine="openpyxl")
+        startrow = len(existing_df)+1  # 追加位置：原有数据的最后一行之后
+        need_header = False  # 追加时不写表头
+    except FileNotFoundError:
+        # 若文件不存在，直接初始化
+        # 导出为Excel
+        save_df.to_excel("./all_data.xlsx", index=False)
+        print(f"文件 {file_path} 不存在，自动创建...")
+        return
+    except ValueError:
+        # 若工作表不存在，直接写入新工作表（mode='a' 支持新增工作表）
+        print(f"工作表 Sheet1 不存在，新增工作表并写入数据...")
+        startrow = 0  # 新工作表从第 0 行开始写入（含列名）
+        need_header = True  # 新工作表需写表头
+
+    # 步骤2：追加写入（mode='a'，append 模式，不覆盖原有数据）
+    with pd.ExcelWriter(
+            file_path,
+            engine="openpyxl",
+            mode="a",  # 关键：追加模式
+            if_sheet_exists="overlay"  # 工作表已存在时，覆盖指定区域（仅追加，不影响原有数据）
+    ) as writer:
+        # startrow：从第 N 行开始写入（跳过原有数据的行，不重复写入列名）
+        save_df.to_excel(
+            writer,
+            sheet_name="Sheet1",
+            index=False,
+            startrow=startrow,  # 核心参数：指定追加的起始行
+            header=need_header  # 追加时False（不写表头），新增工作表时True（写表头）
+        )
+    print(f"成功追加 {len(save_df)} 条数据到 {file_path}（工作表：Sheet）")
 
 
 def pdf_to_text(content:bytes) -> str:

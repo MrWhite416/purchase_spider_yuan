@@ -48,7 +48,7 @@ class Spider1(BaseSpider):
             "pppStatus": "0",
             "agentName": ""
         }
-        self.run_flag = False
+        self.run_flag = True
         self.first_page_num = 1
 
     def master(self):
@@ -159,7 +159,7 @@ class Spider2(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
 
     def master(self):
         return self
@@ -186,7 +186,7 @@ class Spider3(BaseSpider):
             "TIMEEND": self.end_time,  # 结束时间
             "SOURCE_TYPE": "1",  # 数据来源（省平台1或央企招投标2）
             "DEAL_TIME": "06",
-            "DEAL_CLASSIFY": "00",
+            "DEAL_CLASSIFY": "00",  # 数据来源（省平台00或央企招投标01）
             "DEAL_STAGE": "0100",  # 业务及信息类型（不限业务的交易公告 0001）
             "DEAL_PROVINCE": "0",
             "DEAL_CITY": "0",
@@ -198,48 +198,48 @@ class Spider3(BaseSpider):
             "FINDTXT": "卫星"  # 关键词
         }
         self.total_page = 0
-        self.run_flag = False
+        self.run_flag = True
         self.first_page_num = 1
 
     def master(self):
-        try:
-            for k in self.keys:  # 遍历关键词
-                for i, l in [("1", "0001"), ('2', "0101")]:  # 遍历数据源
 
+        for k in self.keys:  # 遍历关键词
+            for i, n,l in [("1", "00","0001"), ('2',"01" ,"0101")]:  # 遍历数据源
+
+                try:
+                    self.data["SOURCE_TYPE"] = str(i)
+                    self.data["DEAL_CLASSIFY"] = n
+                    self.data["DEAL_STAGE"] = l
+                    self.data["FINDTXT"] = k
+                    self.data["PAGENUMBER"] = str(self.first_page_num)  # 必须初始化页码参数
+
+                    # 第一次请求搜索接口
+                    resp = self.req("post", url=self.search_api, headers=self.headers, data=self.data)
+
+                    # 获取总页数
                     try:
-                        self.data["SOURCE_TYPE"] = str(i)
-                        self.data["DEAL_STAGE"] = l
-                        self.data["FINDTXT"] = k
-                        self.data["PAGENUMBER"] = str(self.first_page_num)  # 必须初始化页码参数
-
-                        # 第一次请求搜索接口
-                        resp = self.req("post", url=self.search_api, headers=self.headers, data=self.data)
-
-                        # 获取总页数
                         self.total_page = resp["ttlpage"]
-                        # 如果总页数为0
-                        if not self.total_page:
-                            self.logger.info(f"[{k}]没有搜索结果")
-                            continue
+                    except Exception as e:
+                        self.logger.error(f"{e} | {k} | {i,l} | {resp} | {self.data}")
+                    # 如果总页数为0
+                    if not self.total_page:
+                        self.logger.info(f"[{k}]没有搜索结果")
+                        continue
+                    self.logger.info(f"关键词：[{k}] | {i,n,l} | 第一页")
+                    self.process(resp)
 
+                    # 分页逻辑
+                    for page_num in range(self.first_page_num + 1, self.total_page + 1):
+                        self.logger.info(f"关键词：[{k}] | {i, n, l} | 第{page_num}页")
+                        self.data["PAGENUMBER"] = int(page_num)
+
+                        resp = self.req("post", url=self.search_api, headers=self.headers, data=self.data)
                         self.process(resp)
 
-                        # 分页逻辑
-                        for page_num in range(self.first_page_num + 1, self.total_page + 1):
-                            self.data["PAGENUMBER"] = int(page_num)
+                except Exception as e:
+                    self.logger.error(f"{self.name} | 出错 | {e} | 错误行号：{e.__traceback__.tb_lineno}")
 
-                            resp = self.req("post", url=self.search_api, headers=self.headers, data=self.data)
-                            self.process(resp)
-
-                    except Exception as e:
-                        self.logger.error(f"{self.name} | 出错 | {e} | 错误行号：{e.__traceback__.tb_lineno}")
-
-            return self
-
-        except Exception as e:
-            self.logger.error(f"{self.name} | 出错 | {e} | 错误行号：{e.__traceback__.tb_lineno}")
-
-            return self
+        return self
 
     def process(self, resp):
         urls = self.clean_url(resp)
@@ -330,7 +330,7 @@ class Spider4(BaseSpider):
             "_t": "1755766552103"
         }
         self.page_total = 0
-        self.run_flag = False
+        self.run_flag = True
         self.first_page_num = 1
 
     def master(self):
@@ -371,7 +371,7 @@ class Spider4(BaseSpider):
 
         urls = self.clean_url(resp)
 
-        for t, u in urls:
+        for t, u,link in urls:
             detail_data = self.req("get", url=u, headers=self.headers)
             time.sleep(2.5)
             res = self.clean_detail(detail_data, t)
@@ -379,7 +379,7 @@ class Spider4(BaseSpider):
                 continue
             title, release_date, origin, content = res
 
-            self.add(title, release_date, origin, content, u)
+            self.add(title, release_date, origin, content, link)
 
     @property
     def code(self):
@@ -393,6 +393,10 @@ class Spider4(BaseSpider):
 
     def clean_url(self, search_result):
         try:
+            "https://www.ccgp-sichuan.gov.cn/maincms-web/article?"\
+             "type=notice&"\
+             "id=5a539c06-53fd-4b15-bb75-e57ed3e9cd72&"\
+              "planId=8a69ced2977e23aa019786ea5b37186f"
             datas = search_result["data"]["rows"]
             urls = []
             if not datas:
@@ -408,7 +412,10 @@ class Spider4(BaseSpider):
                 params = {"site": d["site"], "planId": d["planId"], "_t": 1755826448587}
                 encode_params = urlencode(params)
                 url = self.detail_api + "?" + encode_params
-                urls.append((title, url))
+
+                # 拼接人工访问链接
+                link = f"https://www.ccgp-sichuan.gov.cn/maincms-web/article?type=notice&id={d['id']}&planId={d['planId']}"
+                urls.append((title, url,link))
             return urls
         except Exception as e:
             self.logger.error(f"{self.name} | 出错 | {e} | 错误行号：{e.__traceback__.tb_lineno}")
@@ -474,7 +481,7 @@ class Spider5(BaseSpider):
             "page": "1",
             "size": ""
         }
-        self.run_flag = False
+        self.run_flag = True
         self.page_total = 0
         self.first_page_num = 1
 
@@ -577,7 +584,7 @@ class Spider6(BaseSpider):
             "endTime": self.end_time
         }
         self.page_total = 0
-        self.run_flag = False
+        self.run_flag = True
         self.first_page_num = 1
 
     def master(self):
@@ -713,7 +720,7 @@ class Spider7(BaseSpider):
             "infoid": "I1300000001137328001001",
             "laiyuan": "ptn"
         }
-        self.run_flag = False
+        self.run_flag = True
         self.page_total = 0
         self.first_page_num = 0
 
@@ -826,7 +833,7 @@ class Spider8(BaseSpider):
             "industryClassification": "",
             "cId": "3d6e34806adf48d5a59ad94f6f31deb5"
         }
-        self.run_flag = False
+        self.run_flag = True
         self.page_total = 0
         self.first_page_num = 1
 
@@ -918,7 +925,6 @@ class Spider9(BaseSpider):
     search_api = "https://ggzyjy.nmg.gov.cn/trssearch/openSearch/searchPublishResource"
     detail_api = "https://ggzyjy.nmg.gov.cn/trssearch/openSearch/getPublishResourceDealContent?sourceDataKey={}"
 
-    describe = ""
 
     def __init__(self):
         BaseSpider.__init__(self)
@@ -937,7 +943,7 @@ class Spider9(BaseSpider):
             "industriesTypeName": ""
         }
         self.page_total = 0
-        self.run_flag = False
+        self.run_flag = True
         self.first_page_num = 1
 
     def master(self):
@@ -971,12 +977,12 @@ class Spider9(BaseSpider):
 
         urls = self.clean_urls(resp)
 
-        for title, source_id in urls:
+        for title, source_id,link in urls:
             detail_url = self.detail_api.format(source_id)
             detail_resp = self.req("get", url=detail_url, headers=self.headers)
             release_time, origin, text = self.clean_detail(detail_resp)
 
-            self.add(title, release_time, origin, text, detail_url)
+            self.add(title, release_time, origin, text, link)
 
     def clean_urls(self, resp):
 
@@ -988,7 +994,11 @@ class Spider9(BaseSpider):
                 continue
 
             sourceId = d["sourceDataKey"]
-            urls.append([title, sourceId])
+
+            # 拼接人工访问的链接
+            link = f"https://ggzyjy.nmg.gov.cn/jyxx/index_24.html?id={sourceId}"
+
+            urls.append([title, sourceId,link])
 
         return urls
 
@@ -1019,7 +1029,7 @@ class Spider10(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.headers["content-type"] = "application/json;charset=UTF-8"
         self.data = {
             "keyword": "机器人",
@@ -1129,7 +1139,7 @@ class Spider11(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "code": "1892dd01822",
             "searchWord": "人工智能",
@@ -1154,6 +1164,7 @@ class Spider11(BaseSpider):
                 ]
             }
         }
+        self.is_next = True  # 判断是否继续
         self.headers["Content-Type"] = "application/json"
         self.first_page_num = 1
 
@@ -1178,6 +1189,8 @@ class Spider11(BaseSpider):
 
             # 分页逻辑
             for page_num in range(self.first_page_num + 1, total_page + 1):
+                if not self.is_next:
+                    break
                 self.data["pageNo"] = page_num
                 data = json.dumps(self.data, separators=(',', ':'))
                 resp = self.req("post", url=self.search_api, headers=self.headers, data=data)
@@ -1207,18 +1220,20 @@ class Spider11(BaseSpider):
             start_date = datetime.datetime.strptime(self.start_time, "%Y-%m-%d").date()
 
             # 发布时间不小于我们设置的开始时间
-            if release_date > start_date:
-                title = data["title"]
+            if release_date < start_date:
+                self.is_next = False
+                break
+            title = data["title"]
 
-                # 清洗title
-                title = re.sub("<.+?>", "", title, flags=re.DOTALL).strip()
+            # 清洗title
+            title = re.sub("<.+?>", "", title, flags=re.DOTALL).strip()
 
-                # 筛选
-                if self.adopt_title_filter(title):
-                    continue
+            # 筛选
+            if self.adopt_title_filter(title):
+                continue
 
-                url = data["url"]
-                urls.append([title, date_str, url])
+            url = data["url"]
+            urls.append([title, date_str, url])
 
         return urls
 
@@ -1251,7 +1266,7 @@ class Spider12(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "token": "",
             "pn": 0,
@@ -1371,12 +1386,12 @@ class Spider13(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.params = {
             "PageSize": "20",
             "CurrentPage": "1",
-            "StartDateTime": "2025-06-01 00:00:00",
-            "EndDateTime": "2025-08-20 23:59:59",
+            "StartDateTime": self.standard_time(self.start_time),
+            "EndDateTime": self.standard_time(self.end_time),
             "Keyword": "机器人"
         }
         self.first_page_num = 1
@@ -1406,8 +1421,8 @@ class Spider13(BaseSpider):
     def process(self, resp):
 
         urls = self.clean_urls(resp)
-        for title, release_date, link in urls:
-            detail = self.req("get", url=link, headers=self.headers)
+        for title, release_date, detail_url,link in urls:
+            detail = self.req("get", url=detail_url, headers=self.headers)
             origin, text = self.clean_detail(detail)
 
             self.add(title, release_date, origin, text, link)
@@ -1424,8 +1439,11 @@ class Spider13(BaseSpider):
 
             release_date = d["create_time"]
             id_ = d["id"]
-            link = "https://api.jszbtb.com/DataSyncApi/TenderBulletin/id/{}".format(id_)
-            urls.append([title, release_date, link])
+            detail_url = "https://api.jszbtb.com/DataSyncApi/TenderBulletin/id/{}".format(id_)
+
+            link = f"https://www.jszbtb.com/#/bulletindetail/TenderBulletin/{id_}?release={{\"release\":\"{release_date.split('T')[0]}\"}}"
+
+            urls.append([title, release_date, detail_url,link])
 
         return urls
 
@@ -1450,8 +1468,8 @@ class Spider13(BaseSpider):
                 break
         return origin, text
 
-    def is_next(self):
-        pass
+    def standard_time(self,tt):
+        return tt+" 00:00:00"
 
 
 class Spider14(BaseSpider):
@@ -1462,7 +1480,7 @@ class Spider14(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "token": "",
             "pn": 0,
@@ -1501,8 +1519,8 @@ class Spider14(BaseSpider):
             "time": [
                 {
                     "fieldName": "webdate",
-                    "startTime": "2025-06-01 00:00:00",
-                    "endTime": "2025-08-20 23:59:59"
+                    "startTime": self.standard_time(self.start_time),
+                    "endTime": self.standard_time(self.end_time)
                 }
             ],
             "highlights": "",
@@ -1577,8 +1595,8 @@ class Spider14(BaseSpider):
 
         return text
 
-    def is_next(self):
-        pass
+    def standard_time(self,tt):
+        return tt+" 00:00:00"
 
 
 class Spider15(BaseSpider):
@@ -1589,7 +1607,7 @@ class Spider15(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "pageNo": 1,
             "pageSize": 20,
@@ -1600,8 +1618,8 @@ class Spider15(BaseSpider):
             "GGTYPE": "1",
             "PROTYPE": "D01",
             "timeType": "",
-            "BeginTime": "2025-06-01 00:00:00",
-            "EndTime": "2025-08-20 23:59:59",
+            "BeginTime": self.standard_time(self.start_time),
+            "EndTime": self.standard_time(self.end_time),
             "createTime": [
                 "2025-06-01 00:00:00",
                 "2025-08-20 00:00:00"
@@ -1809,6 +1827,10 @@ class Spider15(BaseSpider):
         # 返回字符串形式的明文
         return json.loads(plaintext.decode('utf-8'))
 
+    def standard_time(self,tt):
+        return tt+ " 00:00:00"
+
+
 
 class Spider16(BaseSpider):
     website = "www.jxsggzy.cn"
@@ -1818,7 +1840,7 @@ class Spider16(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "token": "",
             "pn": 10,
@@ -1935,7 +1957,7 @@ class Spider17(BaseSpider):
             "channelId": "151",
             "ext": ""
         }
-        self.run_flag = False
+        self.run_flag = True
         self.first_page_num = 1
 
     def master(self):
@@ -2057,7 +2079,7 @@ class Spider18(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.params = {
             "dates": "300",
             "categoryId": "88",
@@ -2170,7 +2192,7 @@ class Spider19(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "currentPage": "1",
             "pageSize": "10",
@@ -2254,15 +2276,15 @@ class Spider20(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.first_page_num = 1
         self.params = {
             "current": "1",
             "size": "10",
             "notice": "1",
             "noticeName": "卫星",
-            "noticeSendTimeStart": "2024-08-01 00:00:00",
-            "noticeSendTimeEnd": "2025-08-02 23:59:59",
+            "noticeSendTimeStart": self.standard_time(self.start_time),
+            "noticeSendTimeEnd": self.standard_time(self.end_time),
             "descs": "noticeSendTime"
         }
 
@@ -2311,7 +2333,7 @@ class Spider20(BaseSpider):
                 continue
             release_time = d["noticeSendTime"]
             id_ = d["bidSectionId"]
-            origin = d["regionName"] + "公共资源交易中心"
+            origin = d["regionName"] + "公共资源交易中心" if d["regionName"] else None
 
             link = f"https://www.hnsggzy.com/#/resources/projectDetail/governmentPurchase?bidSectionId={id_}"
             urls.append([title, release_time, origin, id_, link])
@@ -2325,6 +2347,9 @@ class Spider20(BaseSpider):
         else:
             return ""
 
+    def standard_time(self,tt):
+        return tt+" 00:00:00"
+
 
 class Spider21(BaseSpider):
     website = "ygp.gdzwfw.gov.cn"
@@ -2335,7 +2360,7 @@ class Spider21(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "type": "trading-type",
             "openConvert": False,
@@ -2459,7 +2484,6 @@ class Spider21(BaseSpider):
             trading_process = d["tradingProcess"]
             project_type = d["projectType"]
             channel = d["noticeSecondType"]
-            self.logger.debug(title)
             urls.append([title, date_, origin,
                          notice_id, version, project_code,
                          site_code, trading_process, project_type, channel])
@@ -2492,7 +2516,7 @@ class Spider22(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "code": "181aedab55d",
             "beginDateTime": self.standard_time(self.start_time),
@@ -2593,7 +2617,7 @@ class Spider23(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "token": "",
             "pn": 0,
@@ -2712,10 +2736,10 @@ class Spider23(BaseSpider):
         sele = etree.HTML(detail)
         div_content = sele.xpath(".//div[@class='article-info jyxx-info']")[0]
 
-        # 注意：XPath索引从1开始，[position() <=4]表示前4个
-        children = div_content.xpath("./child::*[position() <= 4]")
-        for child in children:
-            div_content.remove(child)
+        # # 注意：XPath索引从1开始，[position() <=4]表示前4个
+        # children = div_content.xpath("./child::*[position() <= 4]")
+        # for child in children:
+        #     div_content.remove(child)
 
         content_text = etree.tostring(div_content, method="html", encoding="unicode")
         text = element_to_text(content_text)
@@ -2737,7 +2761,7 @@ class Spider47(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.params = {
             "建设工程": {
                 "area": "001",
@@ -2960,7 +2984,7 @@ class Spider49(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.first_page_num = 1
         self.data = {
             "name": "办公",
@@ -3067,7 +3091,7 @@ class Spider51(BaseSpider):
 
     def __init__(self):
         BaseSpider.__init__(self)
-        self.run_flag = False
+        self.run_flag = True
         self.data = {
             "pageNum": 2,
             "pageSize": 10,

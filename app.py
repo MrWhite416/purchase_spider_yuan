@@ -8,64 +8,78 @@ import warnings
 from urllib3.exceptions import InsecureRequestWarning
 from apscheduler.schedulers.blocking import BlockingScheduler
 from util.deduplicate import deduplication
+from spiders import crawler
+from datetime import datetime
 
 
 # 禁用 "Unverified HTTPS request" 警告
 warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
-def ck_tasks():
-    tasks = []
-    for i in list(range(1,24))+[51,49,48,47]:
+def task():
 
-        example = getattr(spiders,f"Spider{i}")()
-        if example.run_flag:
+
+    def ck_tasks():
+        tasks = []
+
+        for i in list(range(1,24))+[51,49,48,47]:
+
+            example = getattr(spiders,f"Spider{i}")()
+            if example.run_flag:
+                tasks.append(example.master)
+
+        for i in [24,25,26,27]+list(range(30,47)):
+            example = getattr(crawler,f"Spider{i}")()
+
             tasks.append(example.master)
 
 
-    return tasks
+        return tasks
 
-def execute(task):
-    return task()
-
-
-with ThreadPoolExecutor(max_workers=8) as pool:
-    res = pool.map(execute,ck_tasks())
-    dfs = [example.df for example in res]
+    def execute(task):
+        return task()
 
 
-    summary_df("./all_data.xlsx",dfs)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        res = pool.map(execute,ck_tasks())
+        dfs = [example.df for example in res]
+
+        summary_df("./all_data.xlsx",dfs)
 
 
-# 爬虫任务结束，数据存储之后的一些处理
-# 如数据去重，旧数据删除，邮件推送等
-deduplication("./all_data.xlsx")  # 去重
+    # 爬虫任务结束，数据存储之后的一些处理
+    # 如数据去重，旧数据删除，邮件推送等
+    deduplication("./all_data.xlsx")  # 去重
 
-clean_old_data("./all_data.xlsx")  # 删除旧数据
+    clean_old_data("./all_data.xlsx")  # 删除旧数据
 
-email_content = """请查收附件"""
-send_163_email("招标公告推送",email_content)  # 发送邮件
+    email_content = """请查收附件"""
+    send_163_email("招标公告推送",email_content)  # 发送邮件
 
+# task()
 
 
 # 定时任务调度
 
-# sched = BlockingScheduler()
-#
-#
-# # 3. 添加任务：用 cron 触发器，指定每天凌晨1点
+sched = BlockingScheduler()
+
+
+# 3. 添加任务：用 cron 触发器，指定每天凌晨1点
 # sched.add_job(
 #     func=task,
 #     trigger='cron',
-#     hour=1,
-#     minute=0,
+#     # hour=1,
+#     minute=35,
 #     second=24
 # )
-#
-# sched.start()
 
+# 每隔10分钟执行一次（从启动时间开始计算，每次执行后间隔10分钟）
+sched.add_job(
+    func=task,
+    trigger='interval',
+    minutes=10,  # 关键：间隔10分钟
+    # 可选：设置首次执行延迟（如启动后立即执行，不加则默认等待10分钟）
+    next_run_time=datetime.now()
+)
 
+sched.start()
 
-
-# 来自 Spider11（吉林省公共资源交易中心） 类的方法 clean_detail 执行出错: list index out of range
-# 来自 Spider7（河北省招标投标公共服务平台） 类的方法 clean_url 执行出错: 'NoneType' object is not subscriptable
-# 来自 Spider7（河北省招标投标公共服务平台） 类的方法 process 执行出错: 'NoneType' object is not iterable

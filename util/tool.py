@@ -1,5 +1,6 @@
 # development time: 2025-08-21  13:48
 # developer: 元英
+import json
 
 from lxml import etree
 import pandas as pd
@@ -7,7 +8,7 @@ import fitz  # PyMuPDF 的导入名是 fitz，不是 pymupdf
 import time
 import re
 from util.infer import AI_filter
-from setting import sender_email,sender_auth_code, default_recipients,attachment_paths
+from setting import sender_email,sender_auth_code, default_recipients,attachment_paths,is_first_file
 
 import smtplib
 from datetime import datetime,timedelta
@@ -80,17 +81,23 @@ def summary_df(file_path:str,df_list:list):
 
     dfs = []
     for d in df_list:
-        # 校验字典是否为类DataFrame格式（所有值都是等长列表）
-        lengths = [len(v) for v in d.values()]
-        if len(set(lengths)) > 1:  # 检查所有列表长度是否一致
-            raise ValueError(f"字典值列表长度不一致：{d}")
-        dfs.append(pd.DataFrame(d))  # 转换为DataFrame
+        if isinstance(d,dict):
+            # 校验字典是否为类DataFrame格式（所有值都是等长列表）
+            lengths = [len(v) for v in d.values()]
+            if len(set(lengths)) > 1:  # 检查所有列表长度是否一致
+                raise ValueError(f"字典值列表长度不一致：{d}")
+            dfs.append(pd.DataFrame(d))  # 转换为DataFrame
+        else:
+            dfs.append(d)
 
     # 2. 纵向合并所有DataFrame（行合并）
     merged_df = pd.concat(dfs, axis=0, ignore_index=True)
+    has_no_data = merged_df.empty  # 检查是否没有行数据
 
-    save_df = AI_filter(merged_df)
-
+    if not has_no_data:
+        save_df = AI_filter(merged_df)
+    else:
+        save_df = merged_df
 
     # 步骤1：读取已有文件的工作表，获取当前数据的行数（用于定位追加位置）
     try:
@@ -100,7 +107,7 @@ def summary_df(file_path:str,df_list:list):
     except FileNotFoundError:
         # 若文件不存在，直接初始化
         # 导出为Excel
-        save_df.to_excel("./all_data.xlsx", index=False)
+        save_df.to_excel("./all_data.xlsx", index=False,sheet_name="Sheet1")
         print(f"文件 {file_path} 不存在，自动创建...")
         return
     except ValueError:
@@ -228,27 +235,6 @@ def send_163_email(
 
 
 
-def get_target_time(first: bool) -> str:
-    """
-    根据first变量的值，返回对应的时间（包含年月日时分秒）
-
-    :param first: 布尔值，True则返回一周前的时间，False则返回昨天的时间
-    :return: 格式化的时间字符串，格式为"YYYY-MM-DD HH:MM:SS"
-    """
-    # 获取当前时间
-    current_time = datetime.now()
-
-    # 根据first的值判断需要计算几天前的时间
-    if first:
-        # first为True，计算一周前（7天前）的时间
-        target_time = current_time - timedelta(days=7)
-    else:
-        # first为False，计算昨天（1天前）的时间
-        target_time = current_time - timedelta(days=1)
-
-    # 格式化时间并返回
-    return target_time.strftime("%Y-%m-%d %H:%M:%S")
-
 
 def clean_old_data(excel_path, output_path=None):
     """
@@ -289,8 +275,12 @@ def clean_old_data(excel_path, output_path=None):
     new_data = df[mask]
     old_data_count = len(df) - len(new_data)
 
+    # 将时间类型转为字符串
+    # 对于 datetime.date 类型的列，转换为字符串
+    new_data["时间"] = new_data["时间"].apply(lambda x: x.strftime("%Y-%m-%d"))
+
     # 6. 输出清洗结果
-    print(f"清洗完成：原始数据共 {len(df)} 条，过滤旧数据 {old_data_count} 条，保留新数据 {len(new_data)} 条")
+    print(f"清洗完成：原始数据共 {len(df)} 条，过滤旧数据 {old_data_count} 条，保留数据 {len(new_data)} 条")
 
     # 7. 保存清洗后的数据
     if output_path is None:
@@ -300,6 +290,7 @@ def clean_old_data(excel_path, output_path=None):
         print(f"清洗后的数据已保存至：{output_path}")
     except Exception as e:
         print(f"保存文件失败：{str(e)}")
+
 
 
 

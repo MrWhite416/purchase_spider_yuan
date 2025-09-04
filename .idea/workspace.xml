@@ -5,17 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="32185471-41c0-4b1f-ab4b-ad84ccd793e7" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/AI_fiter_data_deduplicated.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/util/deduplicate.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/util/infer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/spiders/DES_encrypt.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/spiders/SM2_encrypt.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/spiders/crawler.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/spiders/demo_crawler.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/spiders/main_crawl.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/spiders/main_parse.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/00.js" beforeDir="false" afterPath="$PROJECT_DIR$/00.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/00.doc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/00.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/00.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/00.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/00.png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/00.py" beforeDir="false" afterPath="$PROJECT_DIR$/00.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/7.py" beforeDir="false" afterPath="$PROJECT_DIR$/7.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/all_data.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/all_data.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/all_data1.xlsx" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/first_status.json" beforeDir="false" afterPath="$PROJECT_DIR$/first_status.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/issue.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt.1" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.1" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt.2" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.2" afterDir="false" />
@@ -24,12 +30,9 @@
       <change beforePath="$PROJECT_DIR$/logs/log.txt.5" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.5" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt.6" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.6" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/log.txt.7" beforeDir="false" afterPath="$PROJECT_DIR$/logs/log.txt.7" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mq_crawler.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/setting.py" beforeDir="false" afterPath="$PROJECT_DIR$/setting.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spiders/base_spider.py" beforeDir="false" afterPath="$PROJECT_DIR$/spiders/base_spider.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/spiders/spiders.py" beforeDir="false" afterPath="$PROJECT_DIR$/spiders/spiders.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/util/tool.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/tool.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/website_config.xls" beforeDir="false" afterPath="$PROJECT_DIR$/website_config.xls" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,10 +81,11 @@
       <recent name="D:\YuanYing'sProject\purchaseInformationProject\Purchase" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\YuanYing'sProject\purchaseInformationProject\Purchase\spiders" />
       <recent name="D:\YuanYing'sProject\purchaseInformationProject\Purchase" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.00">
+  <component name="RunManager" selected="Python.app (1)">
     <configuration name="00" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="purchaseInformationProject" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -148,7 +152,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="draft_spiders" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="log" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="purchaseInformationProject" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -156,12 +160,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Purchase/spiders" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/util" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Purchase/spiders/draft_spiders.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/util/log.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -194,11 +198,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.00" />
         <item itemvalue="Python.app (1)" />
+        <item itemvalue="Python.00" />
         <item itemvalue="Python.7" />
+        <item itemvalue="Python.log" />
         <item itemvalue="Python.spiders" />
-        <item itemvalue="Python.draft_spiders" />
       </list>
     </recent_temporary>
   </component>
@@ -226,7 +230,8 @@
       <workItem from="1756429016725" duration="26274000" />
       <workItem from="1756563667311" duration="3645000" />
       <workItem from="1756688372820" duration="23803000" />
-      <workItem from="1756876820193" duration="1798000" />
+      <workItem from="1756876820193" duration="15852000" />
+      <workItem from="1756947601609" duration="13241000" />
     </task>
     <task id="LOCAL-00001" summary="新增网站">
       <option name="closed" value="true" />
@@ -252,7 +257,23 @@
       <option name="project" value="LOCAL" />
       <updated>1756722526596</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="完善">
+      <option name="closed" value="true" />
+      <created>1756878681779</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1756878681779</updated>
+    </task>
+    <task id="LOCAL-00005" summary="清理旧数据，时间格式统一">
+      <option name="closed" value="true" />
+      <created>1756893916098</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1756893916098</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -260,10 +281,13 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="新增网站" />
-    <option name="LAST_COMMIT_MESSAGE" value="新增网站" />
+    <MESSAGE value="完善" />
+    <MESSAGE value="清理旧数据，时间格式统一" />
+    <option name="LAST_COMMIT_MESSAGE" value="清理旧数据，时间格式统一" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/app_py$7.coverage" NAME="7 Coverage Results" MODIFIED="1756113266210" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase" />
+    <SUITE FILE_PATH="coverage/00_py$log.coverage" NAME="log Coverage Results" MODIFIED="1756878858374" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/util" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$log.coverage" NAME="log Coverage Results" MODIFIED="1755760113392" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/util" />
     <SUITE FILE_PATH="coverage/Purchase$app__1_.coverage" NAME="app (1) Coverage Results" MODIFIED="1756567376817" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$app.coverage" NAME="app Coverage Results" MODIFIED="1755765999229" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase" />
@@ -274,12 +298,12 @@
     <SUITE FILE_PATH="coverage/app_py$app.coverage" NAME="app Coverage Results" MODIFIED="1756114188821" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$verification_code.coverage" NAME="verification_code Coverage Results" MODIFIED="1755768130597" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/util" />
     <SUITE FILE_PATH="coverage/app_py$spiders.coverage" NAME="spiders Coverage Results" MODIFIED="1756092711967" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/spiders" />
-    <SUITE FILE_PATH="coverage/00_py$7.coverage" NAME="7 Coverage Results" MODIFIED="1756722083788" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/00_py$7.coverage" NAME="7 Coverage Results" MODIFIED="1756892505227" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Purchase$00.coverage" NAME="00 Coverage Results" MODIFIED="1756457546549" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/00_py$app__1_.coverage" NAME="app (1) Coverage Results" MODIFIED="1756877783549" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/00_py$app__1_.coverage" NAME="app (1) Coverage Results" MODIFIED="1756961247134" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/app_py$base_spider.coverage" NAME="base_spider Coverage Results" MODIFIED="1756025054660" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/spiders" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$spiders.coverage" NAME="spiders Coverage Results" MODIFIED="1755763593057" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase/spiders" />
-    <SUITE FILE_PATH="coverage/00_py$00.coverage" NAME="00 Coverage Results" MODIFIED="1756878376148" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/00_py$00.coverage" NAME="00 Coverage Results" MODIFIED="1756955789776" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$log__1_.coverage" NAME="log (1) Coverage Results" MODIFIED="1755759782321" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../../SideHustleFiles/爬虫/2025-03-12/projectTwo/utils" />
     <SUITE FILE_PATH="coverage/purchaseInformationProject$7.coverage" NAME="7 Coverage Results" MODIFIED="1755770243565" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Purchase" />
   </component>

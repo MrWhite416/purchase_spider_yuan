@@ -725,8 +725,7 @@ class Spider7(BaseSpider):
         self.first_page_num = 0
 
     def master(self):
-        # for k in self.keys:
-        for k in ["办公"]:
+        for k in self.keys:
             self.data["KeyStr"] = k
             self.data["page"] = str(self.first_page_num)
             try:
@@ -775,6 +774,7 @@ class Spider7(BaseSpider):
             self.add(title, release_time, origin, text, link)
 
     def clean_url(self, data: dict):
+
 
         infos = data["t"]["search_ZbGg"]
         info_ids = []
@@ -2409,7 +2409,6 @@ class Spider21(BaseSpider):
                     self.process(resp)
 
                     if self.next:
-                        self.logger.warn(f"[{k}] | {channel_name} | 不会再有数据了")
                         break
         return self
 

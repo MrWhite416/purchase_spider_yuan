@@ -27,7 +27,7 @@ def task():
             if example.run_flag:
                 tasks.append(example.master)
 
-        for i in [24,25,26,27]+list(range(30,47)):
+        for i in list(range(24,47)):
             example = getattr(crawler,f"Spider{i}")()
 
             tasks.append(example.master)
@@ -61,7 +61,7 @@ def task():
 # 定时任务调度
 
 sched = BlockingScheduler()
-
+#
 
 # 3. 添加任务：用 cron 触发器，指定每天凌晨1点
 # sched.add_job(
@@ -76,10 +76,10 @@ sched = BlockingScheduler()
 sched.add_job(
     func=task,
     trigger='interval',
-    minutes=10,  # 关键：间隔10分钟
+    days=1,
     # 可选：设置首次执行延迟（如启动后立即执行，不加则默认等待10分钟）
     next_run_time=datetime.now()
 )
-
+#
 sched.start()
 

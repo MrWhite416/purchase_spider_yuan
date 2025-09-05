@@ -6,13 +6,16 @@ from copy import deepcopy
 
 import parsel
 
-from loguru import logger
+# from loguru import logger
+from util.log import logger
 from tqdm import tqdm
 import pandas as pd
 
 from spiders.demo_crawler import Crawler
-from spiders.main_parse import ContentParser, deep_clean_text, ProcurementAnnouncement,get_sub_parts
+from spiders.main_parse import ContentParser, deep_clean_text, ProcurementAnnouncement,get_sub_parts,ocr_content
 from spiders.SM2_encrypt import AccurateSM2Crypto
+from spiders.DES_encrypt import decrypt_by_des, str_key
+import random
 
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -207,8 +210,6 @@ class Spider24:
         self.df = pd.DataFrame(datas_list)
         return self
 
-        
-        
 
 class Spider25:
     def __init__(self, thread_num=3):
@@ -1364,6 +1365,462 @@ class Spider27:
 #
 #         self.df = pd.DataFrame(datas_list)
         return self
+
+
+
+# TODO 网站加载缓慢，且详情内容为PDF
+class Spider28:
+    def __init__(self,thread_num=3):
+        """
+        eg:
+            start_time='2025-05-23'
+            end_time='2025-08-20'
+        """
+        self.start_time = START_TIME
+        self.end_time = END_TIME
+        self.key_words = KeyWords
+        self.thread_num = thread_num
+
+        self.crawler = Crawler(crawler_type='requests')
+
+        self.detail_requests_queue = queue.Queue()
+        self.other_page_requests_queue = queue.Queue()
+        self.details_queue = queue.Queue()
+
+        self.domain_name = 'http://www.sntba.com/website/index.aspx'
+        self.website_name = '陕西采购与招标网'
+        self.fields = {
+            'website_name': '',
+            'url': '',
+            'title': '',
+            'publish_time': '',
+            'source': '',
+            'content': ''
+        }
+        self.df = None
+
+    def master(self):
+        def get_detail_requests_from_detail_list_res(detail_list_res):
+            for detail in detail_list_res[1:]:
+                """
+                TODO:
+                    是否记录列表页请求结果
+                """
+
+                detail_href = content_parser.normalize_xpath(
+                    detail, './td[1]//a/@href'
+                )
+                detail_href = re.findall(r'http.*?html', detail_href)[0]
+
+                self.detail_requests_queue.put({
+                    'url': detail_href,
+                    'requests_type': 'get',
+                    'title': content_parser.normalize_xpath(
+                        detail, './td[1]//a/@title'
+                    ),
+                    'publish_time': content_parser.normalize_xpath(
+                        detail, './td[5]'
+                    ),
+                })
+
+        def key_word_search(key_word, item):
+            url = 'http://bulletin.sntba.com/xxfbcmses/search/bulletin.html'
+            params = {
+                'searchDate': '2000-09-04',
+                'dates': '300',
+                'categoryId': item['categoryId'],
+                'industryName': '',
+                'area': '',
+                'status': '',
+                'publishMedia': '',
+                'sourceInfo': '',
+                'showStatus': '',
+                'word': key_word,
+                'startcheckDate': self.start_time,
+                'endcheckDate': self.end_time
+            }
+            res = self.crawler.get_response(
+                url=url,
+                requests_type='get',
+                # judgement=[],
+                params=params
+            )
+            selector = parsel.Selector(res)
+            # json_res = json.loads(res)
+
+            get_detail_requests_from_detail_list_res(
+                selector.xpath('//table[@class="table_text"]//tr')
+            )
+
+            total_page = content_parser.normalize_xpath(
+                selector, '//*[@class="pagination"]', text_join=''
+            )
+            if not total_page:
+                return True
+            total_page = int(re.findall(r'共(\d+)页', total_page)[0])
+            if total_page > 1:
+                for page_num in range(2, total_page + 1):
+                    new_params = deepcopy(params)
+                    new_params.update({
+                        'page': page_num
+                    })
+                    self.other_page_requests_queue.put({
+                        'url': url,
+                        'requests_type': 'get',
+                        # 'judgement': [],
+                        'params': new_params
+                    })
+
+        def other_pages_requests(item):
+            res = self.crawler.get_response(
+                url=item['url'],
+                requests_type=item['requests_type'],
+                # judgement=item['judgement'],
+                params=item['params']
+            )
+            selector = parsel.Selector(res)
+            # json_res = json.loads(res)
+
+            get_detail_requests_from_detail_list_res(
+                selector.xpath('//table[@class="table_text"]//tr')
+            )
+
+        def detail_requests(item):
+            res = self.crawler.get_response(
+                url=item['url'],
+                requests_type=item['requests_type']
+            )
+            selector = parsel.Selector(res)
+
+            pdf_index = content_parser.normalize_xpath(
+                selector, '//*[@class="mian_list_03"]/@index'
+            )
+            # try:
+            #     key_res = self.crawler.get_response(
+            #         url=r'http://39.107.102.206:8087/permission/getSecretKey',
+            #         requests_type='post',  # post、get
+            #         # post_data=encrypted_result,
+            #         judgement=[],
+            #     )
+            #
+            #     des_key = json.loads(decrypt_by_des(key_res, str_key()))['data']
+            #
+            #     url = fr'http://39.107.102.206:8087/bulletin/getBulletin/{des_key}/{pdf_index}'
+            #
+            #     pdf_res = self.crawler.get_response(
+            #         url=url,
+            #         requests_type='get',  # post、get
+            #         # post_data=encrypted_result,
+            #         judgement=[],
+            #         save_as_b=True,
+            #         stream=True
+            #     )
+            #
+            #     content = ocr_content(pdf_res)
+            # except Exception as e:
+            #     # logger.error(e)
+            #     content = ''
+            content = ''
+            source = content_parser.normalize_xpath(
+                selector, '//*[@class="mian_list_02"]/p/span[contains(text(),  "发布媒介")]'
+            )
+            source = re.findall(r'发布媒介：(.*)', source)
+            source = source[0] if source else ''
+            data_out = {
+                '标题': item['title'],
+                '时间': item['publish_time'],
+                '来源': source,
+                '链接': item['url'],
+                '所在网站': self.website_name,
+                '正文': content,
+
+            }
+            self.details_queue.put(data_out)
+            # time.sleep(random.randint(5, 10))
+
+        # 启动线程池，根据模块、关键字搜索
+        logger.info('开始根据关键字搜索。。。')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_num) as executor:
+            futures = []
+            channel_list = [
+                {
+                    'channel_name': '招标公告',
+                    'categoryId': '88'
+                },
+            ]
+            for search_args in channel_list:
+                for s in self.key_words:
+                    future = executor.submit(
+                        key_word_search,
+                        s, search_args
+                    )
+                    futures.append(future)
+
+            # 等待所有任务完成
+            concurrent.futures.wait(futures)
+
+        # 启动线程池，分页请求
+        logger.info(f'开始请求分页，total: {self.other_page_requests_queue.qsize()}')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_num) as executor:
+            futures = []
+            while True:
+                try:
+                    s = self.other_page_requests_queue.get_nowait()
+                    future = executor.submit(other_pages_requests, s)
+                    futures.append(future)
+                except queue.Empty:
+                    break
+            # 等待所有任务完成
+            concurrent.futures.wait(futures)
+
+        # 启动线程池，详情页请求清洗
+        logger.info(f'开始请求详情页，total: {self.detail_requests_queue.qsize()}')
+        self.crawler.headers.update({
+            'Accept': '*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Origin': 'http://bulletin.sntba.com',
+            'Proxy-Connection': 'keep-alive',
+            'Referer': 'http://bulletin.sntba.com/',
+        })
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            futures = []
+            duplicate_detail_list = []
+            while True:
+                try:
+                    s = self.detail_requests_queue.get_nowait()
+                    if s['url'] not in duplicate_detail_list:
+                        future = executor.submit(detail_requests, s)
+                        futures.append(future)
+                        duplicate_detail_list.append(s['url'])
+                except queue.Empty:
+                    break
+            # 等待所有任务完成
+            concurrent.futures.wait(futures)
+
+        logger.info('开始导出数据。。。')
+        datas_list = []
+        while True:
+            try:
+                datas_list.append(self.details_queue.get_nowait())
+            except queue.Empty:
+                break
+
+        self.df = pd.DataFrame(datas_list)
+        return self
+
+
+# TODO SM2加密
+class Spider29:
+    def __init__(self, thread_num=3):
+        """
+        eg:
+            start_time='2025-05-23'
+            end_time='2025-08-20'
+        """
+        self.start_time = START_TIME
+        self.end_time = END_TIME
+        self.key_words = KeyWords
+        self.thread_num = thread_num
+
+        self.crawler = Crawler(crawler_type='requests')
+
+        self.detail_requests_queue = queue.Queue()
+        self.other_page_requests_queue = queue.Queue()
+        self.details_queue = queue.Queue()
+
+        self.domain_name = 'https://ggzyjy.gansu.gov.cn'
+        self.website_name = '甘肃省公共资源交易网'
+        self.fields = {
+            'website_name': '',
+            'url': '',
+            'title': '',
+            'publish_time': '',
+            'source': '',
+            'content': ''
+        }
+        self.df = None
+
+    def master(self):
+        def key_word_search(key_word, item):
+            url = 'https://sjfz.ggzyjy.gansu.gov.cn:19002/api/renren-api/ESProjectList/searchByPage'
+            post_data = {
+                "platformCode": "",
+                "noticeName": key_word,
+                "tradeType": item['tradeType'],
+                "link": "PROJECT",
+                "pageSize": 10,
+                "page": 1,
+                "important": "",
+                "remote": ""
+            }
+
+            while True:
+                # selector = parsel.Selector(res)
+                # max_date = content_parser.normalize_xpath(selector, '(//*[@class="right_new1"]//li[1]/a/span)[last()]')
+                # min_date = content_parser.normalize_xpath(selector, '((//*[@class="right_new1"]//li)[last()]/a/span)[last()]')
+
+                crypto = AccurateSM2Crypto()
+                encrypted = crypto.get_encrypted(json.dumps(post_data, separators=(',', ':'), ensure_ascii=False))
+                res = self.crawler.get_response(
+                    url=url,
+                    requests_type='post',
+                    judgement=[],
+                    post_data=encrypted
+                )
+                json_res = json.loads(res)
+
+                max_date = re.findall(r'\d{4}-\d{2}-\d{2}', json_res['data']['list'][0]['sendTime'])[0]
+                min_date = re.findall(r'\d{4}-\d{2}-\d{2}', json_res['data']['list'][-1]['sendTime'])[0]
+
+                if (not max_date) or (not min_date):
+                    break
+                if datetime.strptime(max_date, '%Y-%m-%d') < datetime.strptime(self.start_time, '%Y-%m-%d'):
+                    break
+                elif datetime.strptime(min_date, '%Y-%m-%d') <= datetime.strptime(self.start_time, '%Y-%m-%d') < datetime.strptime(max_date, '%Y-%m-%d'):
+                    for detail in json_res['data']['list']:
+                        detail_date = re.findall(r'\d{4}-\d{2}-\d{2}', detail['sendTime'])[0]
+                        if datetime.strptime(self.start_time, '%Y-%m-%d') > datetime.strptime(detail_date, '%Y-%m-%d'):
+                            break
+
+                        post_data = {
+                            "projectType": detail['projectClassifyCode'],
+                            "pubServicePlatCode": detail['pubServicePlatCode'],
+                            "projectId": detail['tenderProjectId'],
+                            "tableName": "TENDER_ANNOUNCEMENT"
+                        }
+
+                        self.detail_requests_queue.put({
+                            'url': r'https://sjfz.ggzyjy.gansu.gov.cn:19002/api/renren-api/ESAnnouncement/getAnnouncementList',
+                            'requests_type': 'post',
+                            'post_data': post_data,
+                            'title': deep_clean_text(detail['noticeName']),
+                            'publish_time': detail_date,
+                            'source': detail['platformName'],
+                            'item': item
+                        })
+                    break
+
+                else:
+                    for detail in json_res['data']['list']:
+                        detail_date = re.findall(r'\d{4}-\d{2}-\d{2}', detail['sendTime'])[0]
+                        post_data = {
+                            "projectType": detail['projectClassifyCode'],
+                            "pubServicePlatCode": detail['pubServicePlatCode'],
+                            "projectId": detail['tenderProjectId'],
+                            "tableName": "TENDER_ANNOUNCEMENT"
+                        }
+
+                        self.detail_requests_queue.put({
+                            'url': r'https://sjfz.ggzyjy.gansu.gov.cn:19002/api/renren-api/ESAnnouncement/getAnnouncementList',
+                            'requests_type': 'post',
+                            'post_data': post_data,
+                            'title': deep_clean_text(detail['noticeName']),
+                            'publish_time': detail_date,
+                            'source': detail['platformName'],
+                            'item': item
+                        })
+
+                    post_data.update({
+                        'page': post_data['page'] + 1
+                    })
+
+        def detail_requests(item):
+            crypto = AccurateSM2Crypto()
+            encrypted = crypto.get_encrypted(json.dumps(item['post_data'], separators=(',', ':'), ensure_ascii=False))
+            res = self.crawler.get_response(
+                url=item['url'],  # self.domain_name + json_res_prime['urlpath'],
+                requests_type=item['requests_type'],
+                post_data=encrypted,
+                judgement=[]
+            )
+            json_res = json.loads(res)['data'][0]
+            if re.findall(r'^http.*?pdf$', json_res['noticeContent']):
+                url = json_res['noticeContent']
+                try:
+                    pdf_res = self.crawler.get_response(
+                        url=url,
+                        requests_type='get',
+                        save_as_b=True,
+                        stream=True
+                    )
+
+                    content = ocr_content(pdf_res)
+                except Exception as e:
+                    logger.error(e)
+                    content = ''
+            else:
+                url = json_res['url']
+                selector = parsel.Selector(json_res['noticeContent'])
+                content = content_parser.replace_p_tag(
+                    html_content=selector.xpath('.').get()
+                )
+
+            data_out = {
+                '标题': item['title'],
+                '时间': item['publish_time'],
+                '来源': item['source'],
+                '链接': url,
+                '所在网站': self.website_name,
+                '正文': content,
+
+            }
+            self.details_queue.put(data_out)
+
+        # 启动线程池，根据模块、关键字搜索
+        logger.info('开始根据关键字搜索。。。')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_num) as executor:
+            futures = []
+            channel_list = [
+                {
+                    'channel_name': '建设工程',
+                    'tradeType': '2',
+                },
+                {
+                    'channel_name': '政府采购',
+                    'tradeType': '3',
+                }
+            ]
+            for search_args in channel_list:
+                for s in self.key_words:
+                    future = executor.submit(
+                        key_word_search,
+                        s, search_args
+                    )
+                    futures.append(future)
+
+            # 等待所有任务完成
+            concurrent.futures.wait(futures)
+
+        # 启动线程池，详情页请求清洗
+        logger.info(f'开始请求详情页，total: {self.detail_requests_queue.qsize()}')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_num) as executor:
+            futures = []
+            duplicate_detail_list = []
+            while True:
+                try:
+                    s = self.detail_requests_queue.get_nowait()
+                    if (s['title'] not in duplicate_detail_list) and [key_word for key_word in self.key_words if key_word in s['title']]:
+                        future = executor.submit(detail_requests, s)
+                        futures.append(future)
+                        duplicate_detail_list.append(s['title'])
+                except queue.Empty:
+                    break
+            logger.info(f'去重后详情页，total: {len(duplicate_detail_list)}')
+            # 等待所有任务完成
+            concurrent.futures.wait(futures)
+
+        logger.info('开始导出数据。。。')
+        datas_list = []
+        while True:
+            try:
+                datas_list.append(self.details_queue.get_nowait())
+            except queue.Empty:
+                break
+
+        self.df = pd.DataFrame(datas_list)
+
+        return self
+
 
 
 class Spider30:

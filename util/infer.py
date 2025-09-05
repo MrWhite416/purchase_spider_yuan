@@ -1,4 +1,4 @@
-import requests
+from curl_cffi import requests
 import json
 import pandas
 from util import log
@@ -34,7 +34,7 @@ def filter(info:str):
     }
 
     # 发送 POST 请求
-    response = requests.post(url, headers=headers, data=json.dumps(data),timeout=30)
+    response = requests.post(url, headers=headers, data=json.dumps(data),timeout=30,verify=False)
 
     # 检查响应状态并输出结果
     if response.status_code == 200:
@@ -65,5 +65,8 @@ def AI_filter(df:str|pandas.DataFrame):
 
 
     return df_reserved
+
+# s = filter("这是一段招标文本")
+# print(s)
 
 

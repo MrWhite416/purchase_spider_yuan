@@ -1,16 +1,44 @@
 import os
-
-import re
 from bs4 import BeautifulSoup
-from typing import List, Optional, Union
+from typing import Tuple, List, Union
 
 import html
-
-
 import pandas as pd
 
 import re
-from typing import Tuple, List, Union
+import fitz  # PyMuPDF
+import io
+from PIL import Image
+from cnocr import CnOcr
+import html2text
+
+
+# 初始化OCR
+ocr = CnOcr()
+
+def ocr_content(pdf_res):
+    # 将PDF转换为图片
+    pdf_doc = fitz.open(
+        stream=pdf_res,
+        # filename='test.pdf',
+        filetype="pdf"
+    )
+    pdf_res_list = []
+    for page in pdf_doc:
+
+        # 转换为高分辨率图片
+        pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
+        img_data = pix.tobytes("png")
+        img = Image.open(io.BytesIO(img_data))
+
+        # OCR识别
+        ocr_res = ocr.ocr(img)
+
+        pdf_res_list.append('\n'.join([s['text'] for s in ocr_res]))
+
+    pdf_doc.close()
+    return '\n'.join(pdf_res_list)
+
 
 
 def get_sub_parts(pattern: Union[str, re.Pattern],
@@ -369,6 +397,15 @@ class HTMLTableCleaner:
         return left + mid.join(segments) + right
 
 
+def html2markdown(html_str):
+    text_maker = html2text.HTML2Text()
+    text_maker.bypass_tables = False
+    text_maker.body_width = 0  # 这是关键设
+    text = text_maker.handle(html_str)
+
+    return text
+
+
 class ContentParser:
     @staticmethod
     def normalize_html_str(one_str) -> str:
@@ -467,7 +504,10 @@ class ContentParser:
                             elem.extract()
                 elif target == 'table':
                     for elem in elements:
-                        elem.replace_with(HTMLTableCleaner(border_style="simple").clean_html_content(str(elem)))
+                        elem.replace_with(
+                            # HTMLTableCleaner(border_style="simple").clean_html_content(str(elem))
+                            html2markdown(str(elem))
+                        )
 
         for p_tag in soup.find_all('p'):
             p_tag.replace_with('《【*${}$*】》'.format('\n\t' + re.sub(r'\s', '', p_tag.get_text(strip=True), flags=re.S)))
@@ -657,6 +697,6 @@ if __name__ == '__main__':
             "XiangMu_GaiKuang": "宜宾市一曼中学校初中部2025年提升改造项目的潜在投标人应登录四川省政府采购一体化平台获取招标文件，并于2025年08月12日09时30分00秒（北京时间）前递交投标文件"
         }
 
-    content_dict = ProcurementAnnouncement(test_dict).generate_content_dict()
-    content = '\n'.join([f"{key}\n\t{value}" for key, value in content_dict.items()])
-    print(content)
+    # content_dict = ProcurementAnnouncement(test_dict).generate_content_dict()
+    # content = '\n'.join([f"{key}\n\t{value}" for key, value in content_dict.items()])
+    # print(content)

@@ -9,10 +9,11 @@ import parsel
 
 from threading import Semaphore
 
-import requests
+from curl_cffi import requests
 import my_fake_useragent as ua
 
-from loguru import logger
+# from loguru import logger
+from util.log import logger
 
 ip_url = '127.0.0.1:10809'  # 127.0.0.1:10809
 # local_proxies = {

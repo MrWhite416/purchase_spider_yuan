@@ -26,12 +26,11 @@ sender_email = "pc_adaspace@163.com"
 sender_auth_code = "TRbBL8gzW2PtHq4e"
 # 收件人
 default_recipients = ["2673137332@qq.com",
-                      # "leitiancai@adaspace.com",
+                      "leitiancai@adaspace.com",
                       "439993015@qq.com"]
 # default_recipients = ["2673137332@qq.com","yanxinyu@adaspace.com"]
 # 附件
-attachment_paths=["./AI_fiter_data_deduplicated.xlsx"]
-
+attachment_paths = ["./all_data.xlsx"]
 
 
 

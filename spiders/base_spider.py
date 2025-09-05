@@ -13,6 +13,8 @@ from types import FunctionType
 from setting import *
 from functools import wraps
 
+START_TIME,END_TIME=get_target_time()
+
 
 # 定义通用异常捕获装饰器
 def exception_handler(func):

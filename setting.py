@@ -2,6 +2,7 @@
 # developer: 元英
 
 import json
+import pandas as pd
 from datetime import datetime,timedelta
 
 
@@ -55,37 +56,91 @@ def is_first():
     return data["first"]
 
 
-def get_target_time(first: bool) -> tuple[str, str]:
-    """
-    根据first变量的值，返回对应的时间（包含年月日时分秒）
+""" 这是项目的配置模块 """
 
-    :param first: 布尔值，True则返回一周前的时间，False则返回昨天的时间
+
+
+def find_max_time_in_excel(file_path):
+    """
+    提取Excel表格中以"时间"为表头的列，并找出其中的最大时间
+
+    参数:
+        file_path: Excel文件的路径
+
+    返回:
+        最大的时间值，如果没有找到时间列则返回None
+    """
+    try:
+        # 读取Excel文件
+        df = pd.read_excel(file_path)
+
+        # 查找表头为"时间"的列
+        time_column = None
+        for column in df.columns:
+            if str(column).strip() == "时间":
+                time_column = column
+                break
+
+        if time_column is None:
+            print("未找到表头为'时间'的列")
+            return None
+
+        # 提取时间列数据
+        time_series = df[time_column]
+
+        # 尝试将数据转换为 datetime 类型
+        try:
+            time_series = pd.to_datetime(time_series, errors='coerce')
+        except Exception as e:
+            print(f"转换时间格式时出错: {e}")
+            return None
+
+        # 去除空值
+        valid_times = time_series.dropna()
+
+        if valid_times.empty:
+            print("时间列中没有有效的时间数据")
+            return None
+
+        # 找到最大时间
+        max_time = valid_times.max()
+
+        print(f"时间列中的最大时间是: {max_time.strftime('%Y-%m-%d')}")
+        return max_time.to_pydatetime()
+
+    except FileNotFoundError:
+        print(f"错误: 找不到文件 {file_path}")
+        return None
+    except Exception as e:
+        print(f"处理文件时出错: {e}")
+        return None
+
+
+def get_target_time() -> tuple[str, str]:
+    """
     :return: 格式化的时间字符串，格式为"YYYY-MM-DD HH:MM:SS"
     """
     # 获取当前时间
     current_time = datetime.now()
 
-    # 根据first的值判断需要计算几天前的时间
-    if first:
-        # first为True，计算一周前（7天前）的时间
+    # 从all_data.xlsx中提取最大时间
+    max_time = find_max_time_in_excel(file_path='./all_data.xlsx')
+
+    # 获取开始采集时间
+    if max_time and (max_time > current_time - timedelta(days=7)):
+        target_time = max_time + timedelta(days=1)
+    else:
         target_time = current_time - timedelta(days=7)
 
-        start_time = target_time.strftime("%Y-%m-%d")
-        end_time = current_time.strftime("%Y-%m-%d")
-    else:
-        # first为False，计算昨天（1天前）的时间
-        target_time = current_time - timedelta(days=1)
+    end_time = current_time - timedelta(days=1)
 
-        start_time = end_time = target_time.strftime("%Y-%m-%d")
-
+    start_time = target_time.strftime("%Y-%m-%d")
+    end_time = end_time.strftime("%Y-%m-%d")
     return start_time, end_time
-
-
-""" 这是项目的配置模块 """
 
 # 初始化时间参数
 first = is_first()
 if first:
     print("第一次运行程序...")
-START_TIME,END_TIME = get_target_time(first)
+
 

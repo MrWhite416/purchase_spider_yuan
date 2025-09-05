@@ -2,13 +2,14 @@
 # developer: 元英
 
 from concurrent.futures import ThreadPoolExecutor
-from spiders import spiders
 from util.tool import summary_df,send_163_email,clean_old_data
 import warnings
 from urllib3.exceptions import InsecureRequestWarning
 from apscheduler.schedulers.blocking import BlockingScheduler
 from util.deduplicate import deduplication
-from spiders import crawler
+import importlib
+from spiders import spiders, crawler
+
 from datetime import datetime
 
 
@@ -17,6 +18,8 @@ warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
 def task():
 
+    importlib.reload(spiders)
+    importlib.reload(crawler)
 
     def ck_tasks():
         tasks = []

@@ -22,6 +22,7 @@ from util.tool import element_to_text, pdf_to_text
 from util.verification_code import ocr_code
 
 
+
 class Spider1(BaseSpider):
     website = "ccgp.gov.cn"
     name = "中国政府采购网"

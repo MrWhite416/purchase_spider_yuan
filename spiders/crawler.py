@@ -6,24 +6,23 @@ from copy import deepcopy
 
 import parsel
 
-# from loguru import logger
 from util.log import logger
 from tqdm import tqdm
-import pandas as pd
 
 from spiders.demo_crawler import Crawler
 from spiders.main_parse import ContentParser, deep_clean_text, ProcurementAnnouncement,get_sub_parts,ocr_content
 from spiders.SM2_encrypt import AccurateSM2Crypto
-from spiders.DES_encrypt import decrypt_by_des, str_key
-import random
+
 
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import queue
 
 import time
-from datetime import datetime
-from setting import KEYS,START_TIME,END_TIME
+
+from setting import *
+START_TIME,END_TIME=get_target_time()
+
 
 KeyWords = KEYS
 content_parser = ContentParser()
@@ -1378,6 +1377,7 @@ class Spider28:
         """
         self.start_time = START_TIME
         self.end_time = END_TIME
+
         self.key_words = KeyWords
         self.thread_num = thread_num
 
